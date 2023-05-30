@@ -1,18 +1,16 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-
+import { Container, Button, Row, Col, Card } from 'react-bootstrap';
 
 const Home = () => {
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    // Fetch products from the server
-    const fetchProducts = async() => {
+    const fetchProducts = async () => {
       try {
-        const response = await axios.get('/api/products');
+        const response = await axios.get('http://localhost:4000/api/products');
         setProducts(response.data);
-      }
-      catch (error) {
+      } catch (error) {
         console.error('Error fetching products:', error);
       }
     };
@@ -20,32 +18,54 @@ const Home = () => {
     fetchProducts();
   }, []);
 
-  const handleAddToCart = (productId) => {
-    // Implement the necessary logic to add the product to the cart
-    console.log('Adding product to cart:', productId);
+  const handleAddToCart = async (productId) => {
+    try {
+      await axios.post('http://localhost:4000/api/cart', {
+        product: productId,
+        quantity: 1 // You can adjust the quantity as needed
+      });
+      alert('Product added to cart successfully!');
+    } catch (error) {
+      console.error('Error adding item to cart:', error);
+    }
   };
 
   return (
-    <div>
+    <Container>
       <h2>Welcome to the Shopping Cart App!</h2>
       <img src="../resources/images/banner.jpg" alt="Banner" />
       <p>Start shopping now!</p>
-      <button onClick={() => alert('Button clicked!')}>Shop Now</button>
+      <Button variant="primary" onClick={() => alert('Button clicked!')}>
+        Shop Now
+      </Button>
       <h3>Featured Products:</h3>
-      <ul>
-        {products.map(product => (
-          <li key={product.id}>
-            <h4>{product.name}</h4>
-            <p>Price: ${product.price}</p>
-             <p>{product.description}</p>     
-             <img src={product.imageUrl} alt={product.name} />
-             <p>Category: {product.category}</p>
-             <button onClick={() => handleAddToCart(product._id)}>Add to Cart</button>
-             <p>Quantity in Cart: {getProductQuantityInCart(product._id)}</p>
-          </li>
+      <Row>
+        {products.map((product) => (
+          <Col key={product._id} md={4}>
+            <Card className="mb-4">
+              <Card.Img
+                variant="top"
+                src={product.imageUrl}
+                alt={product.name}
+                style={{ width: '100%', height: '200px', objectFit: 'cover' }}
+              />
+              <Card.Body>
+                <Card.Title>{product.name}</Card.Title>
+                <Card.Text>Price: ${product.price}</Card.Text>
+                <Card.Text>{product.description}</Card.Text>
+                <Card.Text>Category: {product.category}</Card.Text>
+                <Button
+                  variant="primary"
+                  onClick={() => handleAddToCart(product._id)}
+                >
+                  Add to Cart
+                </Button>
+              </Card.Body>
+            </Card>
+          </Col>
         ))}
-      </ul>
-    </div>
+      </Row>
+    </Container>
   );
 };
 
