@@ -1,12 +1,15 @@
 const mongoose = require('mongoose');
-const CartItem = require('./cartItem');
+const { Schema } = mongoose;
+const CartItem = require('./cart');
 
-const orderSchema = new mongoose.Schema(
+
+const orderSchema = new Schema(
   {
     cartItems: [
       {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: 'CartItem',
+        required: true,
       },
     ],
     paymentInfo: {
@@ -30,14 +33,12 @@ const orderSchema = new mongoose.Schema(
         type: String,
         required: true,
       },
-      // Add any other payment-related fields you need
     },
     status: {
       type: String,
       enum: ['pending', 'paid', 'payment failed'],
       default: 'pending',
     },
-    // Add any other fields you need for the order
   },
   { timestamps: true }
 );

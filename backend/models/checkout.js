@@ -1,52 +1,24 @@
-// checkout.js
+const mongoose = require('mongoose');
+const { Schema } = mongoose;
 
-// Assuming you have a database connection, import the necessary models and libraries
-const Order = require('./order');
-const CartItem = require('./cartItem');
-const PaymentGateway = require('../libraries/paymentGateway');
+const checkoutSchema = new Schema({
+  cartItems: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'CartItem',
+      required: true,
+    },
+  ],
+  paymentInfo: {
+    paymentMethod: { type: String, required: true },
+    cardNumber: { type: String, required: true },
+    expiryDate: { type: String, required: true },
+    cvv: { type: String, required: true },
+    billingAddress: { type: String, required: true },
+  },
+  createdAt: { type: Date, default: Date.now },
+});
 
-// Function to process the checkout
-const processCheckout = async (cartItems, paymentInfo) => {
-  try {
-    // Create a new order with the cart items and payment information
-    const order = new Order({
-      cartItems,
-      paymentInfo,
-    });
+const Checkout = mongoose.model('Checkout', checkoutSchema);
 
-    // Save the order to the database
-    const savedOrder = await order.save();
-
-    // Process the payment using a payment gateway library
-    const paymentGateway = new PaymentGateway();
-    const paymentResult = await paymentGateway.processPayment(paymentInfo);
-
-    if (paymentResult.success) {
-      // If payment is successful, update the order status to 'paid'
-      savedOrder.status = 'paid';
-      await savedOrder.save();
-
-      // Remove the cart items from the database
-      await CartItem.deleteMany({ _id: { $in: cartItems.map((item) => item._id) } });
-
-      // Return the order and payment information
-      return {
-        order: savedOrder,
-        paymentInfo: paymentResult.paymentInfo,
-      };
-    } else {
-      // If payment fails, update the order status to 'payment failed'
-      savedOrder.status = 'payment failed';
-      await savedOrder.save();
-
-      // Return an error message
-      throw new Error('Payment failed. Please try again.');
-    }
-  } catch (error) {
-    throw new Error('Error processing checkout: ' + error.message);
-  }
-};
-
-module.exports = {
-  processCheckout,
-};
+module.exports = Checkout;

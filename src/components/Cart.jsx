@@ -1,9 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Card, Button } from 'react-bootstrap';
+import { Card, Button, Form } from 'react-bootstrap';
 
 const Cart = () => {
   const [cartItems, setCartItems] = useState([]);
+  const [paymentInfo, setPaymentInfo] = useState({
+    paymentMethod: 'credit card',
+    cardNumber: '',
+    expiryDate: '',
+    cvv: '',
+    billingAddress: '',
+  });
 
   useEffect(() => {
     const fetchCartItems = async () => {
@@ -38,6 +45,14 @@ const Cart = () => {
     }
   };
 
+  const handlePaymentInfoChange = (e) => {
+    const { name, value } = e.target;
+    setPaymentInfo((prevInfo) => ({
+      ...prevInfo,
+      [name]: value,
+    }));
+  };
+
   const handleCheckout = async () => {
     try {
       // Prepare the cart items for checkout
@@ -47,13 +62,21 @@ const Cart = () => {
       }));
 
       // Make a request to the server to process the checkout
-      await axios.post('http://localhost:4000/api/checkout', { cartItems: items });
+      const response = await axios.post('http://localhost:4000/api/checkout', {
+        cartItems: items,
+        paymentInfo,
+      });
 
-      // Clear the cart after successful checkout
-      setCartItems([]);
-
-      // Show a success message to the user
-      alert('Checkout successful!');
+      // Check the payment result from the response
+      if (response.data.success) {
+        // Clear the cart after successful checkout
+        setCartItems([]);
+        // Show a success message to the user
+        alert('Checkout successful!');
+      } else {
+        // Show an error message to the user
+        alert('Payment failed. Please try again.');
+      }
     } catch (error) {
       console.error('Error during checkout:', error);
       // Show an error message to the user
@@ -61,7 +84,10 @@ const Cart = () => {
     }
   };
 
-  const totalPrice = cartItems.reduce((total, item) => total + item.quantity * item.productPrice, 0);
+  const totalPrice = cartItems.reduce(
+    (total, item) => total + item.quantity * item.productPrice,
+    0
+  );
 
   return (
     <div>
@@ -90,15 +116,72 @@ const Cart = () => {
                     onChange={(e) => handleQuantityChange(item._id, e.target.value)}
                   />
                 </div>
-                <Button variant="danger" onClick={() => handleRemoveFromCart(item._id)} style={{ marginTop: '10px' }}>
+                <Button
+                  variant="danger"
+                  onClick={() => handleRemoveFromCart(item._id)}
+                  style={{ marginTop: '10px' }}
+                >
                   Remove from Cart
                 </Button>
               </Card.Body>
             </Card>
           ))}
           <h4>Total Price: ${totalPrice}</h4>
+
+          <h2>Payment Information</h2>
+          <Form>
+            <Form.Group>
+              <Form.Label>Payment Method</Form.Label>
+              <Form.Control
+                as="select"
+                name="paymentMethod"
+                value={paymentInfo.paymentMethod}
+                onChange={handlePaymentInfoChange}
+              >
+                <option value="credit card">Credit Card</option>
+                <option value="paypal">PayPal</option>
+              </Form.Control>
+            </Form.Group>
+            <Form.Group>
+              <Form.Label>Card Number</Form.Label>
+              <Form.Control
+                type="text"
+                name="cardNumber"
+                value={paymentInfo.cardNumber}
+                onChange={handlePaymentInfoChange}
+              />
+            </Form.Group>
+            <Form.Group>
+              <Form.Label>Expiry Date</Form.Label>
+              <Form.Control
+                type="text"
+                name="expiryDate"
+                value={paymentInfo.expiryDate}
+                onChange={handlePaymentInfoChange}
+              />
+            </Form.Group>
+            <Form.Group>
+              <Form.Label>CVV</Form.Label>
+              <Form.Control
+                type="text"
+                name="cvv"
+                value={paymentInfo.cvv}
+                onChange={handlePaymentInfoChange}
+              />
+            </Form.Group>
+            <Form.Group>
+              <Form.Label>Billing Address</Form.Label>
+              <Form.Control
+                type="text"
+                name="billingAddress"
+                value={paymentInfo.billingAddress}
+                onChange={handlePaymentInfoChange}
+              />
+            </Form.Group>
+          </Form>
+
           <Button variant="success" onClick={handleCheckout}>
-            Checkout 
+            Checkout
           </Button>
         </div>
       )}

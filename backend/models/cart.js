@@ -6,8 +6,9 @@ const cartItemSchema = new mongoose.Schema({
   quantity: { type: Number, default: 1 },
   productName: { type: String, required: true },
   productPrice: { type: Number, required: true },
-  productImage: { type: String } // Add the productImage field
+  productImage: { type: String },
 });
 
 const CartItem = mongoose.model('CartItem', cartItemSchema);
+
 module.exports = CartItem;

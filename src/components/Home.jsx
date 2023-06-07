@@ -1,22 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Container, Button, Row, Col, Card } from 'react-bootstrap';
+import { Container, Button, Row, Col, Card, Form } from 'react-bootstrap';
+import bannerImage from '../resources/images/banner.jpg'; // Import the banner image
 
 const Home = () => {
   const [products, setProducts] = useState([]);
+  const [searchKeyword, setSearchKeyword] = useState('');
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await axios.get('http://localhost:4000/api/products');
-        setProducts(response.data);
-      } catch (error) {
-        console.error('Error fetching products:', error);
-      }
-    };
-
     fetchProducts();
   }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const response = await axios.get('http://localhost:4000/api/products');
+      setProducts(response.data);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  };
 
   const handleAddToCart = async (productId) => {
     try {
@@ -30,15 +32,50 @@ const Home = () => {
     }
   };
 
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (searchKeyword.trim() === '') {
+      fetchProducts(); // Reset to all products if the search keyword is empty
+    } else {
+      try {
+        const response = await axios.get(`http://localhost:4000/api/products?keyword=${searchKeyword}`);
+        setProducts(response.data);
+      } catch (error) {
+        console.error('Error searching products:', error);
+      }
+    }
+  };
+
   return (
     <Container>
       <h2>Welcome to the Shopping Cart App!</h2>
-      <img src="../resources/images/banner.jpg" alt="Banner" />
-      <p>Start shopping now!</p>
+      <img src={bannerImage} alt="Banner" style={{ width: '100%', height: '300px' }} />
+
+      <br />
+
+      <Row className="my-4">
+        <Col md={10}>
+          <Form onSubmit={handleSearch} className="d-flex">
+            <Form.Control
+              type="text"
+              placeholder="Search for Products"
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+            />
+            <Button variant="primary" type="submit" className="ml-4">
+              Search
+            </Button>
+          </Form>
+        </Col>
+      </Row>
+
       <Button variant="primary" onClick={() => alert('Button clicked!')}>
         Shop Now
       </Button>
-      <h3>Featured Products:</h3>
+
+      <br /><br />
+
+      <h3>Products:</h3>
       <Row>
         {products.map((product) => (
           <Col key={product._id} md={4}>

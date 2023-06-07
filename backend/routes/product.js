@@ -4,19 +4,32 @@ const router = express.Router();
 const Product = require('../models/product.js');
 
 // Define API endpoints
+// router.get('/', async (req, res) => {
+//   try {
+//     // Fetch all products from the database
+//     const products = await Product.find();
+
+//     // Return the products as the response
+//     res.status(200).json(products);
+//   } catch (error) {
+//     // Handle any errors that occur during the database query
+//     res.status(500).json({ message: 'An error occurred while fetching products' });
+//   }
+// });
+
+// Define API endpoints
 router.get('/', async (req, res) => {
   try {
-    // Fetch all products from the database
-    const products = await Product.find();
+    const keyword = req.query.keyword || '';
+    const regex = new RegExp(keyword, 'i'); // Case-insensitive search
 
-    // Return the products as the response
+    const products = await Product.find({ $or: [{ name: regex }, { category: regex }] });
     res.status(200).json(products);
   } catch (error) {
-    // Handle any errors that occur during the database query
+    console.error('Error fetching products:', error);
     res.status(500).json({ message: 'An error occurred while fetching products' });
   }
 });
-
 
 router.get('/:id', async (req, res) => {
   const productId = req.params.id;

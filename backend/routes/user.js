@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/user.js');
 const winston = require('winston');
+const bcrypt = require('bcrypt');
 
 // Create a logger instance
 const logger = winston.createLogger({
@@ -51,14 +52,22 @@ router.post('/signin', async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    // Find the user in the database by the provided username and password
-    const user = await User.findOne({ username, password });
+    // Find the user in the database by the provided username
+    const user = await User.findOne({ username });
 
     if (user) {
-      // User is authenticated
-      res.status(200).json({ message: 'User sign-in successful' });
+      // Compare the provided password with the hashed password in the database
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+
+      if (isPasswordValid) {
+        // User is authenticated
+        res.status(200).json({ message: 'User sign-in successful' });
+      } else {
+        // Invalid credentials
+        res.status(401).json({ message: 'Invalid credentials' });
+      }
     } else {
-      // User is not found or the provided credentials are invalid
+      // User not found
       res.status(401).json({ message: 'Invalid credentials' });
     }
   } catch (error) {
@@ -66,5 +75,6 @@ router.post('/signin', async (req, res) => {
     res.status(500).json({ message: 'An error occurred while signing in' });
   }
 });
+
 
 module.exports = router;
