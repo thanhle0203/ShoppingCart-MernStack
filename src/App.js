@@ -1,13 +1,11 @@
-// App.jsx
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, NavLink } from 'react-router-dom';
 import { Container, Navbar, Nav } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 import Home from './components/Home';
 import Cart from './components/Cart';
 import Product from './components/Product';
-import User from './components/User';
 import Coupon from './components/Coupon';
 import SignIn from './components/SignIn';
 import SignUp from './components/SignUp';
@@ -15,6 +13,12 @@ import Account from './components/Account';
 import OrderDetails from './components/OrderDetails';
 
 const App = () => {
+  const [loggedIn, setLoggedIn] = useState(false);
+
+  const handleLogout = () => {
+    setLoggedIn(false);
+  };
+
   return (
     <Router>
       <div>
@@ -28,25 +32,34 @@ const App = () => {
 
             <Navbar.Collapse id="navbar-nav" className="justify-content-end">
               <Nav>
-                <Nav.Link as={Link} to="/">
+                <Nav.Link as={NavLink} to="/" exact="true">
                   Home
                 </Nav.Link>
 
-                <Nav.Link as={Link} to="/product">
+                <Nav.Link as={NavLink} to="/product">
                   Product
                 </Nav.Link>
-                <Nav.Link as={Link} to="/account">
-                  Account
-                </Nav.Link>
-                <Nav.Link as={Link} to="/coupon">
+
+                {loggedIn ? (
+                  <>
+                    <Nav.Link as={NavLink} to="/account">
+                      Account
+                    </Nav.Link>
+                    <Nav.Link as={NavLink} to="/logout" onClick={handleLogout}>
+                      Log out
+                    </Nav.Link>
+                  </>
+                ) : (
+                  <Nav.Link as={NavLink} to="/login">
+                    Sign in
+                  </Nav.Link>
+                )}
+
+                <Nav.Link as={NavLink} to="/coupon">
                   Coupon
                 </Nav.Link>
 
-                <Nav.Link as={Link} to="/login">
-                  Sign in
-                </Nav.Link>
-
-                <Nav.Link as={Link} to="/cart">
+                <Nav.Link as={NavLink} to="/cart">
                   Cart
                 </Nav.Link>
               </Nav>
@@ -57,18 +70,17 @@ const App = () => {
         {/* Main Content */}
         <Container className="mt-4">
           <Routes>
-            <Route exact path="/" element={<Home />} />
-            
+            <Route path="/" element={<Home />} />
+
             <Route path="/product" element={<Product />} />
             <Route path="/account" element={<Account />} />
             <Route path="/coupon" element={<Coupon />} />
             <Route path="/cart" element={<Cart />} />
-            <Route path="/login" element={<SignIn/>} /> 
-            <Route path="/signup" element={<SignUp/>} /> 
-            <Route path="/account/orders/:orderId" element={<OrderDetails />} />
+            <Route path="/login" element={<SignIn />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/order/:id" element={<OrderDetails />} />
           </Routes>
         </Container>
-
 
         {/* Footer Component */}
         <footer className="bg-light text-center py-3">

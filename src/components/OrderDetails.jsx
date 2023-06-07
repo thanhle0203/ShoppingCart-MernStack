@@ -1,50 +1,42 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const OrderDetails = () => {
-  const { orderId } = useParams();
+const OrderDetails = ({ match }) => {
   const [order, setOrder] = useState(null);
 
   useEffect(() => {
-    fetchOrderDetails();
-  }, []);
+    const fetchOrderDetails = async () => {
+      try {
+        const response = await axios.get(`/api/orders/${match.params.id}`);
+        setOrder(response.data);
+      } catch (error) {
+        console.error('Error fetching order details:', error);
+      }
+    };
 
-  const fetchOrderDetails = async () => {
-    try {
-      const response = await axios.get(`http://localhost:4000/api/orders/${orderId}`);
-      setOrder(response.data);
-    } catch (error) {
-      console.error('Error fetching order details:', error);
-    }
-  };
+    fetchOrderDetails();
+  }, [match.params.id]);
 
   if (!order) {
-    return <p>Loading...</p>;
+    return <p>Loading order details...</p>;
   }
 
   return (
     <div>
-      <h3>Order Details</h3>
-      <p>Order ID: {order._id}</p>
-      <p>Date: {new Date(order.createdAt).toLocaleDateString()}</p>
-
-      <h4>Cart Items</h4>
+      <h2>Order Details</h2>
+      <h4>Order ID: {order._id}</h4>
+      <p>Total Price: ${order.totalPrice}</p>
+      <p>Status: {order.status}</p>
+      <h4>Products:</h4>
       <ul>
-      {order.cartItems.map((cartItem, index) => (
-  <li key={`cart-item-${index}`}>
-    <p>Product: {cartItem.productName}</p>
-    <p>Price: {cartItem.productPrice}</p>
-    <p>Quantity: {cartItem.quantity}</p>
-  </li>
-))}
-
-
-</ul>
-
-
-
-      {/* Display other order details here */}
+        {order.products.map((product) => (
+          <li key={product._id}>
+            <h5>{product.product.name}</h5>
+            <p>Price: ${product.product.price}</p>
+            <p>Quantity: {product.quantity}</p>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };
