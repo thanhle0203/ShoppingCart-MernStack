@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require('../models/user.js');
 const winston = require('winston');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 // Create a logger instance
 const logger = winston.createLogger({
@@ -61,7 +62,10 @@ router.post('/signin', async (req, res) => {
 
       if (isPasswordValid) {
         // User is authenticated
-        res.status(200).json({ message: 'User sign-in successful' });
+        const token = user.generateAuthToken(); // Generate a JWT
+        
+        // Return the token in the response
+        res.status(200).json({ token });
       } else {
         // Invalid credentials
         res.status(401).json({ message: 'Invalid credentials' });

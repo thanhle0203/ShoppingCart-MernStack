@@ -7,8 +7,17 @@ const Account = () => {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const response = await axios.get('/api/orders');
-        setOrders(response.data);
+        const token = localStorage.getItem('token');
+        console.log(token); // Check if the token is retrieved correctly
+
+        if (token) {
+          const response = await axios.get('http://localhost:4000/api/orders', {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          setOrders(response.data);
+        }
       } catch (error) {
         console.error('Error fetching orders:', error);
       }

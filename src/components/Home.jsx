@@ -13,7 +13,13 @@ const Home = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await axios.get('http://localhost:4000/api/products');
+      const token = localStorage.getItem('token'); // Retrieve the token from localStorage
+      console.log(token)
+      const response = await axios.get('http://localhost:4000/api/products?keyword=', {
+        headers: {
+          Authorization: `Bearer ${token}`, // Include the token in the request headers
+        },
+      });
       setProducts(response.data);
     } catch (error) {
       console.error('Error fetching products:', error);

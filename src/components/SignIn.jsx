@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Container, Form, Button } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 
-const SignIn = () => {
+const SignIn = ({ setLoggedIn }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -13,31 +13,32 @@ const SignIn = () => {
     e.preventDefault();
 
     try {
-      // Send a POST request to the backend API for user sign-in
       const response = await axios.post('http://localhost:4000/api/users/signin', {
         username,
         password
       });
 
-      // Check if the sign-in was successful
       if (response.status === 200) {
-        // Clear the form inputs
         setUsername('');
         setPassword('');
         setError('');
 
-        // Show a success message to the user
         alert('Sign-in successful!');
 
-        // Redirect to the home page
+        console.log(response.data);
+        
+        const token = response.data.token;
+        localStorage.setItem('token', token);
+        console.log(token);
+
+        setLoggedIn(true);
+
         navigate('/');
 
       } else {
-        // Show an error message to the user
         setError('Invalid credentials');
       }
     } catch (error) {
-      // Show an error message to the user
       setError('An error occurred during sign-in');
       console.error('Error during sign-in:', error);
     }
@@ -75,10 +76,10 @@ const SignIn = () => {
           </Button>
         </Form>
 
-        {error && <p className="text-danger text-center mt-3">{error}</p>}
+        {error && <p className="text-danger mt-3">{error}</p>}
 
         <p className="text-center mt-3">
-          Don't have an account? <Link to="/signup">Sign up</Link>
+          Don't have an account? <Link to="/signup">Sign Up</Link>
         </p>
       </div>
     </Container>

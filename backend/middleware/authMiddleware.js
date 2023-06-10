@@ -1,19 +1,27 @@
-// authMiddleware.js
-
 const jwt = require('jsonwebtoken');
+const dotenv = require('dotenv');
+
+// get config vars
+dotenv.config();
+
+// access config var
+const secret = process.env.JWT_SECRET;
 
 const authMiddleware = (req, res, next) => {
   // Get the token from the request header
-  const token = req.header('Authorization');
+  const authHeader = req.headers.authorization;
 
-  // Check if token exists
-  if (!token) {
+  // Check if Authorization header exists
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ message: 'Authorization denied' });
   }
 
+  // Extract the token from the Authorization header
+  const token = authHeader.split(' ')[1];
+
   try {
     // Verify and decode the token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, secret);
 
     // Attach the decoded user information to the request object
     req.user = decoded.user;

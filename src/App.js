@@ -32,7 +32,7 @@ const App = () => {
 
             <Navbar.Collapse id="navbar-nav" className="justify-content-end">
               <Nav>
-                <Nav.Link as={NavLink} to="/" exact="true">
+                <Nav.Link as={NavLink} to="/" exact={true.toString()}>
                   Home
                 </Nav.Link>
 
@@ -69,17 +69,17 @@ const App = () => {
 
         {/* Main Content */}
         <Container className="mt-4">
-          <Routes>
-            <Route path="/" element={<Home />} />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/product" element={<Product />} />
+          <Route path="/account" element={<Account />} />
+          <Route path="/coupon" element={<Coupon />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/login" element={<SignIn setLoggedIn={setLoggedIn} />} /> {/* Add this line */}
+          <Route path="/signup" element={<SignUp />} />
+          <Route path="/order/:id" element={<OrderDetails />} />
+        </Routes>
 
-            <Route path="/product" element={<Product />} />
-            <Route path="/account" element={<Account />} />
-            <Route path="/coupon" element={<Coupon />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/login" element={<SignIn />} />
-            <Route path="/signup" element={<SignUp />} />
-            <Route path="/order/:id" element={<OrderDetails />} />
-          </Routes>
         </Container>
 
         {/* Footer Component */}

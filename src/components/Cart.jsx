@@ -13,17 +13,22 @@ const Cart = () => {
   });
 
   useEffect(() => {
-    const fetchCartItems = async () => {
-      try {
-        const response = await axios.get('http://localhost:4000/api/cart');
-        setCartItems(response.data.cartItems);
-      } catch (error) {
-        console.error('Error fetching cart items:', error);
-      }
-    };
-
     fetchCartItems();
   }, []);
+
+  const fetchCartItems = async () => {
+    try {
+      const token = localStorage.getItem('token'); // Retrieve the token from localStorage
+      const response = await axios.get('http://localhost:4000/api/cart', {
+        headers: {
+          Authorization: `Bearer ${token}`, // Include the token in the request headers
+        },
+      });
+      setCartItems(response.data.cartItems);
+    } catch (error) {
+      console.error('Error fetching cart items:', error);
+    }
+  };
 
   const handleRemoveFromCart = async (itemId) => {
     try {

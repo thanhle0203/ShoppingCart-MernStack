@@ -20,7 +20,6 @@ const SignUp = () => {
     }
 
     try {
-      // Send a POST request to the backend API for user sign-up
       const response = await axios.post('http://localhost:4000/api/users/signup', {
         username,
         email,
@@ -28,23 +27,21 @@ const SignUp = () => {
         confirmPassword
       });
 
-      // Check if the sign-up was successful
       if (response.status === 201) {
-        // Clear the form inputs
         setUsername('');
         setEmail('');
         setPassword('');
         setConfirmPassword('');
         setError('');
 
-        // Redirect to the sign-in page
+        // Store the token in localStorage
+        localStorage.setItem('token', response.data.token);
+
         navigate('/signin');
       } else {
-        // Show an error message to the user
         setError('An error occurred during sign-up');
       }
     } catch (error) {
-      // Show an error message to the user
       setError('An error occurred during sign-up');
       console.error('Error during sign-up:', error);
     }
