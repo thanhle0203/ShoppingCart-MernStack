@@ -25,7 +25,13 @@ const SignUp = () => {
         email,
         password,
         confirmPassword
-      });
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      }
+      );
 
       if (response.status === 201) {
         setUsername('');

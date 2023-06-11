@@ -39,6 +39,13 @@ const orderSchema = new mongoose.Schema(
   }
 );
 
+// Define a virtual property for formatted createdAt date
+orderSchema.virtual('formattedCreatedAt').get(function() {
+  const createdAt = this.createdAt;
+  const formattedDate = `${createdAt.getMonth() + 1}-${createdAt.getDate()}-${createdAt.getFullYear()}`;
+  return formattedDate;
+});
+
 const Order = mongoose.model('Order', orderSchema);
 
 module.exports = Order;

@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
+const User = require('../models/user');
 
 // get config vars
 dotenv.config();
@@ -7,9 +8,11 @@ dotenv.config();
 // access config var
 const secret = process.env.JWT_SECRET;
 
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
   // Get the token from the request header
   const authHeader = req.headers.authorization;
+
+  console.log('Authorization header:', authHeader); // Add this line
 
   // Check if Authorization header exists
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -23,10 +26,13 @@ const authMiddleware = (req, res, next) => {
     // Verify and decode the token
     const decoded = jwt.verify(token, secret);
 
-    // Attach the decoded user information to the request object
-    req.user = decoded.user;
+    const user = await User.findById(decoded._id);
 
-    // Proceed to the next middleware or route handler
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid token' });
+    }
+
+    req.user = user;
     next();
   } catch (error) {
     return res.status(401).json({ message: 'Invalid token' });

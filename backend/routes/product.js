@@ -1,4 +1,3 @@
-
 const express = require('express');
 const router = express.Router();
 const Product = require('../models/product.js');
@@ -17,8 +16,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Define API endpoints
-router.get('/', async (req, res) => {
+router.get('/search-products/', async (req, res) => {
   try {
     const keyword = req.query.keyword || '';
     const regex = new RegExp(keyword, 'i'); // Case-insensitive search
@@ -52,7 +50,6 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-
 router.post('/', async (req, res) => {
   // Access the product data from req.body
   const productData = req.body;
@@ -71,7 +68,6 @@ router.post('/', async (req, res) => {
     res.status(500).json({ message: 'An error occurred while creating the product' });
   }
 });
-
 
 router.put('/:id', async (req, res) => {
   const productId = req.params.id;
@@ -96,7 +92,6 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-
 router.delete('/:id', async (req, res) => {
   const productId = req.params.id;
 
@@ -117,6 +112,5 @@ router.delete('/:id', async (req, res) => {
     res.status(500).json({ message: 'An error occurred while deleting the product' });
   }
 });
-
 
 module.exports = router;

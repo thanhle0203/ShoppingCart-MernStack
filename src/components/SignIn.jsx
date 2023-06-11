@@ -16,7 +16,13 @@ const SignIn = ({ setLoggedIn }) => {
       const response = await axios.post('http://localhost:4000/api/users/signin', {
         username,
         password
-      });
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      }
+      );
 
       if (response.status === 200) {
         setUsername('');
@@ -26,7 +32,7 @@ const SignIn = ({ setLoggedIn }) => {
         alert('Sign-in successful!');
 
         console.log(response.data);
-        
+
         const token = response.data.token;
         localStorage.setItem('token', token);
         console.log(token);

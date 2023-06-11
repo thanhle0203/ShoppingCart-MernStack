@@ -6,21 +6,34 @@ import bannerImage from '../resources/images/banner.jpg'; // Import the banner i
 const Home = () => {
   const [products, setProducts] = useState([]);
   const [searchKeyword, setSearchKeyword] = useState('');
+  const [cartItems, setCartItems] = useState([]);
 
   useEffect(() => {
     fetchProducts();
   }, []);
 
+  /*
   const fetchProducts = async () => {
     try {
       const token = localStorage.getItem('token'); // Retrieve the token from localStorage
-      console.log(token)
-      const response = await axios.get('http://localhost:4000/api/products?keyword=', {
+      const response = await axios.get('http://localhost:4000/api/products', {
         headers: {
           Authorization: `Bearer ${token}`, // Include the token in the request headers
         },
       });
       setProducts(response.data);
+      console.log(response.data);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  };
+  */
+
+  const fetchProducts = async () => {
+    try {
+      const response = await axios.get('http://localhost:4000/api/products');
+      setProducts(response.data);
+      console.log(response.data);
     } catch (error) {
       console.error('Error fetching products:', error);
     }
@@ -28,13 +41,32 @@ const Home = () => {
 
   const handleAddToCart = async (productId) => {
     try {
-      await axios.post('http://localhost:4000/api/cart', {
-        product: productId,
-        quantity: 1 // You can adjust the quantity as needed
-      });
-      alert('Product added to cart successfully!');
+      const token = localStorage.getItem('token'); // Retrieve the token from localStorage
+      if (token) {
+        const headers = {
+          Authorization: `Bearer ${token}`,
+        };
+
+        // Make a request to add the item to the cart
+        const response = await axios.post(
+          'http://localhost:4000/api/cart',
+          { product: productId },
+          { headers }
+        );
+
+        // Handle the response and update the cart items
+        if (response.data.cartItems) {
+          setCartItems(response.data.cartItems);
+          alert('Item added to cart successfully!');
+        } else {
+          alert('Failed to add item to cart. Please try again.');
+        }
+      } else {
+        console.error('Authentication token not available');
+      }
     } catch (error) {
       console.error('Error adding item to cart:', error);
+      alert('Failed to add item to cart. Please try again.');
     }
   };
 
@@ -44,8 +76,9 @@ const Home = () => {
       fetchProducts(); // Reset to all products if the search keyword is empty
     } else {
       try {
-        const response = await axios.get(`http://localhost:4000/api/products?keyword=${searchKeyword}`);
+        const response = await axios.get(`http://localhost:4000/api/products/search-products?keyword=${searchKeyword}`);
         setProducts(response.data);
+        console.log(response.data);
       } catch (error) {
         console.error('Error searching products:', error);
       }

@@ -2,6 +2,10 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const dotenv = require('dotenv');
+
+// get config vars
+dotenv.config();
 
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true },
@@ -25,10 +29,14 @@ userSchema.pre('save', async function (next) {
   }
 });
 
+// access config var
+const secret = process.env.JWT_SECRET || 'your_default_secret_here';
+
 userSchema.methods.generateAuthToken = function () {
-  const token = jwt.sign({ _id: this._id }, 'yourSecretKey'); // Replace 'yourSecretKey' with your own secret key
+  const token = jwt.sign({ _id: this._id }, secret);
   return token;
 };
+
 
 const User = mongoose.model('User', userSchema);
 

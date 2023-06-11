@@ -4,6 +4,7 @@ const User = require('../models/user.js');
 const winston = require('winston');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const authMiddleware = require('../middleware/authMiddleware');
 
 // Create a logger instance
 const logger = winston.createLogger({
@@ -79,6 +80,16 @@ router.post('/signin', async (req, res) => {
     res.status(500).json({ message: 'An error occurred while signing in' });
   }
 });
+
+
+// Protected route that requires authentication
+router.get('/protected', authMiddleware, (req, res) => {
+  // Access the authenticated user through req.user
+  const user = req.user;
+  res.json({ message: 'You accessed a protected route', user });
+});
+
+
 
 
 module.exports = router;

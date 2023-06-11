@@ -19,16 +19,81 @@ const Cart = () => {
   const fetchCartItems = async () => {
     try {
       const token = localStorage.getItem('token'); // Retrieve the token from localStorage
-      const response = await axios.get('http://localhost:4000/api/cart', {
-        headers: {
-          Authorization: `Bearer ${token}`, // Include the token in the request headers
-        },
-      });
-      setCartItems(response.data.cartItems);
+      console.log('Cart token:', token); // Check if the token is retrieved correctly
+      if (token) {
+        const headers = {
+          Authorization: `Bearer ${token}`,
+        };
+        console.log('Headers:', headers);
+        const response = await axios.get('http://localhost:4000/api/cart', {
+          headers,
+        });
+        console.log('Response:', response.data); // Log the response for debugging
+        setCartItems(response.data.cartItems);
+      } else {
+        console.error('Authentication token not available');
+      }
     } catch (error) {
       console.error('Error fetching cart items:', error);
     }
   };
+
+  const handleCheckout = async () => {
+    try {
+      const token = localStorage.getItem('token'); // Retrieve the token from localStorage
+      if (token) {
+        const headers = {
+          Authorization: `Bearer ${token}`,
+        };
+
+        // Prepare the cart items for checkout
+        const items = cartItems.map((item) => ({
+          _id: item._id,
+          quantity: item.quantity,
+        }));
+
+        // Make a request to the server to process the checkout
+        const response = await axios.post(
+          'http://localhost:4000/api/checkout',
+          {
+            cartItems: items,
+            paymentInfo,
+          },
+          {
+            headers,
+          }
+        );
+
+        // Check the payment result from the response
+        if (response.data.success) {
+          // Clear the cart after successful checkout
+          setCartItems([]);
+
+          // Save the order to the local storage
+          localStorage.setItem('order', JSON.stringify(response.data.order));
+          console.log(response.data.order)
+
+          // Show a success message to the user
+          alert('Checkout successful!');
+        } else {
+          // Show an error message to the user
+          alert('Payment failed. Please try again.');
+        }
+      } else {
+        // Handle case when token is not available
+        console.error('Authentication token not available');
+      }
+    } catch (error) {
+      console.error('Error during checkout:', error);
+      // Show an error message to the user
+      alert('Error during checkout. Please try again.');
+    }
+  };
+
+  const totalPrice = cartItems.reduce(
+    (total, item) => total + item.quantity * item.productPrice,
+    0
+  );
 
   const handleRemoveFromCart = async (itemId) => {
     try {
@@ -57,42 +122,6 @@ const Cart = () => {
       [name]: value,
     }));
   };
-
-  const handleCheckout = async () => {
-    try {
-      // Prepare the cart items for checkout
-      const items = cartItems.map((item) => ({
-        _id: item._id,
-        quantity: item.quantity,
-      }));
-
-      // Make a request to the server to process the checkout
-      const response = await axios.post('http://localhost:4000/api/checkout', {
-        cartItems: items,
-        paymentInfo,
-      });
-
-      // Check the payment result from the response
-      if (response.data.success) {
-        // Clear the cart after successful checkout
-        setCartItems([]);
-        // Show a success message to the user
-        alert('Checkout successful!');
-      } else {
-        // Show an error message to the user
-        alert('Payment failed. Please try again.');
-      }
-    } catch (error) {
-      console.error('Error during checkout:', error);
-      // Show an error message to the user
-      alert('Error during checkout. Please try again.');
-    }
-  };
-
-  const totalPrice = cartItems.reduce(
-    (total, item) => total + item.quantity * item.productPrice,
-    0
-  );
 
   return (
     <div>
@@ -193,5 +222,6 @@ const Cart = () => {
     </div>
   );
 };
+
 
 export default Cart;

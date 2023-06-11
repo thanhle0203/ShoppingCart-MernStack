@@ -2,11 +2,20 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 require('dotenv').config();
+const router = express.Router();
+//const authMiddleware = require('./middleware/authMiddleware');
+
+// Apply authMiddleware to all routes
+//router.use(authMiddleware);
+
 
 const app = express();
 
 app.use(bodyParser.json());
 app.use(cors());
+// Apply the authentication middleware before the order routes
+//app.use(authMiddleware);
+
 
 const userRoutes = require('./routes/user');
 const productRoutes = require('./routes/product');
