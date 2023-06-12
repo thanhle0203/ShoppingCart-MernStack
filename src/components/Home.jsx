@@ -50,7 +50,8 @@ const Home = () => {
         // Make a request to add the item to the cart
         const response = await axios.post(
           'http://localhost:4000/api/cart',
-          { product: productId },
+          { product: productId }
+          ,
           { headers }
         );
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
+import { Card } from 'react-bootstrap';
 
 const OrderDetails = () => {
   const { id } = useParams();
@@ -50,7 +51,6 @@ const OrderDetails = () => {
         console.error('Error fetching product details:', error);
       }
     };
-    
 
     if (order && order.products.length > 0) {
       fetchProductDetails();
@@ -67,28 +67,39 @@ const OrderDetails = () => {
     return date.toLocaleDateString(undefined, options);
   };
 
+  const formatPrice = (price) => {
+    return price.toFixed(2);
+  };
+
   return (
     <div>
       <h2>Order Details</h2>
-      <h4>Order ID: {order._id}</h4>
-      <p>Date Ordered: {formatDate(order.createdAt)}</p>
-      <p>Total Price: ${order.totalPrice}</p>
-      <p>Status: {order.status}</p>
+      <Card>
+        <Card.Body>
+          <Card.Title>Order ID: {order._id}</Card.Title>
+          <Card.Text>Date Ordered: {formatDate(order.createdAt)}</Card.Text>
+          <Card.Text>Total Price: ${formatPrice(order.totalPrice)}</Card.Text>
+          <Card.Text>Status: {order.status}</Card.Text>
+        </Card.Body>
+      </Card>
       <h4>Products:</h4>
-      <ul>
+      <div className="d-flex flex-wrap">
         {products.map((product, index) => (
-          <li key={order.products[index]._id}>
-            <img
+          <Card key={order.products[index]._id} className="m-2" style={{ width: '200px' }}>
+            <Card.Img
+              variant="top"
               src={product.imageUrl}
               alt={product.name}
-              style={{ width: '400px', height: '400px', objectFit: 'cover' }}
+              style={{ height: '200px', objectFit: 'cover' }}
             />
-            <h5>Name: {product.name}</h5>
-            <p>Price: ${product.price}</p>
-            <p>Quantity: {order.products[index].quantity}</p>
-          </li>
+            <Card.Body>
+              <Card.Title>Name: {product.name}</Card.Title>
+              <Card.Text>Price: ${formatPrice(product.price)}</Card.Text>
+              <Card.Text>Quantity: {order.products[index].quantity}</Card.Text>
+            </Card.Body>
+          </Card>
         ))}
-      </ul>
+      </div>
     </div>
   );
 };

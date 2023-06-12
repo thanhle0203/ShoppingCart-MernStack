@@ -29,10 +29,22 @@ const Product = () => {
 
   const handleAddToCart = async (productId) => {
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        // Handle the case where the user is not authenticated
+        console.error('User not authenticated');
+        return;
+      }
+
+      const headers = {
+        Authorization: `Bearer ${token}`,
+      };
+
       await axios.post('http://localhost:4000/api/cart', {
         product: productId,
         quantity: 1 // You can adjust the quantity as needed
-      });
+      }, { headers });
+
       alert('Product added to cart successfully!');
     } catch (error) {
       console.error('Error adding item to cart:', error);

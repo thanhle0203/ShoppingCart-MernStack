@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, NavLink } from 'react-router-dom';
 import { Container, Navbar, Nav } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -15,7 +15,17 @@ import OrderDetails from './components/OrderDetails';
 const App = () => {
   const [loggedIn, setLoggedIn] = useState(false);
 
+  useEffect(() => {
+    // Check if the user is already logged in
+    const token = localStorage.getItem('token');
+    if (token) {
+      setLoggedIn(true);
+    }
+  }, []);
+
   const handleLogout = () => {
+    // Clear the authentication token from storage and log out the user
+    localStorage.removeItem('token');
     setLoggedIn(false);
   };
 
@@ -55,9 +65,7 @@ const App = () => {
                   </Nav.Link>
                 )}
 
-                <Nav.Link as={NavLink} to="/coupon">
-                  Coupon
-                </Nav.Link>
+              
 
                 <Nav.Link as={NavLink} to="/cart">
                   Cart
@@ -69,17 +77,16 @@ const App = () => {
 
         {/* Main Content */}
         <Container className="mt-4">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/product" element={<Product />} />
-          <Route path="/account" element={<Account />} />
-          <Route path="/coupon" element={<Coupon />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/login" element={<SignIn setLoggedIn={setLoggedIn} />} /> {/* Add this line */}
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/order/:id" element={<OrderDetails />} />
-        </Routes>
-
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/product" element={<Product />} />
+            <Route path="/account" element={<Account />} />
+            <Route path="/coupon" element={<Coupon />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/login" element={<SignIn setLoggedIn={setLoggedIn} />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/order/:id" element={<OrderDetails />} />
+          </Routes>
         </Container>
 
         {/* Footer Component */}

@@ -18,17 +18,12 @@ const Cart = () => {
 
   const fetchCartItems = async () => {
     try {
-      const token = localStorage.getItem('token'); // Retrieve the token from localStorage
-      console.log('Cart token:', token); // Check if the token is retrieved correctly
+      const token = localStorage.getItem('token');
       if (token) {
         const headers = {
           Authorization: `Bearer ${token}`,
         };
-        console.log('Headers:', headers);
-        const response = await axios.get('http://localhost:4000/api/cart', {
-          headers,
-        });
-        console.log('Response:', response.data); // Log the response for debugging
+        const response = await axios.get('http://localhost:4000/api/cart', { headers });
         setCartItems(response.data.cartItems);
       } else {
         console.error('Authentication token not available');
@@ -40,60 +35,40 @@ const Cart = () => {
 
   const handleCheckout = async () => {
     try {
-      const token = localStorage.getItem('token'); // Retrieve the token from localStorage
+      const token = localStorage.getItem('token');
       if (token) {
         const headers = {
           Authorization: `Bearer ${token}`,
         };
-
-        // Prepare the cart items for checkout
         const items = cartItems.map((item) => ({
           _id: item._id,
           quantity: item.quantity,
         }));
-
-        // Make a request to the server to process the checkout
         const response = await axios.post(
           'http://localhost:4000/api/checkout',
           {
             cartItems: items,
             paymentInfo,
           },
-          {
-            headers,
-          }
+          { headers }
         );
-
-        // Check the payment result from the response
         if (response.data.success) {
-          // Clear the cart after successful checkout
           setCartItems([]);
-
-          // Save the order to the local storage
           localStorage.setItem('order', JSON.stringify(response.data.order));
-          console.log(response.data.order)
-
-          // Show a success message to the user
           alert('Checkout successful!');
         } else {
-          // Show an error message to the user
           alert('Payment failed. Please try again.');
         }
       } else {
-        // Handle case when token is not available
         console.error('Authentication token not available');
       }
     } catch (error) {
       console.error('Error during checkout:', error);
-      // Show an error message to the user
       alert('Error during checkout. Please try again.');
     }
   };
 
-  const totalPrice = cartItems.reduce(
-    (total, item) => total + item.quantity * item.productPrice,
-    0
-  );
+  const totalPrice = cartItems.reduce((total, item) => total + item.quantity * item.productPrice, 0);
 
   const handleRemoveFromCart = async (itemId) => {
     try {
@@ -106,10 +81,21 @@ const Cart = () => {
 
   const handleQuantityChange = async (itemId, quantity) => {
     try {
-      await axios.put(`http://localhost:4000/api/cart/${itemId}`, { quantity });
-      // Fetch the updated cart items from the server
-      const response = await axios.get('http://localhost:4000/api/cart');
-      setCartItems(response.data.cartItems);
+      const token = localStorage.getItem('token');
+      if (token) {
+        const headers = {
+          Authorization: `Bearer ${token}`,
+        };
+        await axios.put(
+          `http://localhost:4000/api/cart/${itemId}`,
+          { quantity },
+          { headers }
+        );
+        const response = await axios.get('http://localhost:4000/api/cart', { headers });
+        setCartItems(response.data.cartItems);
+      } else {
+        console.error('Authentication token not available');
+      }
     } catch (error) {
       console.error('Error changing quantity:', error);
     }
@@ -222,6 +208,5 @@ const Cart = () => {
     </div>
   );
 };
-
 
 export default Cart;

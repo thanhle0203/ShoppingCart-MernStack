@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Card } from 'react-bootstrap';
 
 const Account = () => {
   const [orders, setOrders] = useState([]);
@@ -26,7 +27,7 @@ const Account = () => {
         }
 
         // Clear the saved order from local storage
-       localStorage.removeItem('order');
+        localStorage.removeItem('order');
       } catch (error) {
         console.error('Error fetching orders:', error);
       }
@@ -41,24 +42,32 @@ const Account = () => {
     return date.toLocaleDateString(undefined, options);
   };
 
+  const formatPrice = (price) => {
+    return price.toFixed(2);
+  }
+
   return (
     <div>
       <h2>My Orders</h2>
-    
+
       {orders.length === 0 ? (
         <p>No orders found.</p>
       ) : (
-        <ul>
+        <div className="row">
           {orders.map((order) => (
-            <li key={order._id}>
-              <h4>Order ID: {order._id}</h4>
-              <p>Date Ordered: {formatDate(order.createdAt)}</p>
-              <p>Total Price: ${order.totalPrice}</p>
-              <p>Status: {order.status}</p>
-              <a href={`/order/${order._id}`}>View Details</a>
-            </li>
+            <div key={order._id} className="col-md-12">
+              <Card className="mb-4">
+                <Card.Body>
+                  <Card.Title>Order ID: {order._id}</Card.Title>
+                  <Card.Text>Date Ordered: {formatDate(order.createdAt)}</Card.Text>
+                  <Card.Text>Total Price: ${formatPrice(order.totalPrice)}</Card.Text>
+                  <Card.Text>Status: {order.status}</Card.Text>
+                  <a href={`/order/${order._id}`}>View Details</a>
+                </Card.Body>
+              </Card>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );
