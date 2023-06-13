@@ -1,26 +1,24 @@
+// checkout.js
+
 const express = require('express');
 const router = express.Router();
 const Checkout = require('../models/checkout');
-const CartItem = require('../models/cart'); // Import the CartItem model
+const CartItem = require('../models/cart');
 const Order = require('../models/order');
-const User = require('../models/user')
+const User = require('../models/user');
 const authMiddleware = require('../middleware/authMiddleware');
+const PaymentGateway = require('../libraries/paymentGateway');
 
-// Apply authMiddleware to all routes
 router.use(authMiddleware);
 
 const processCheckout = async (user, cartItems, paymentInfo) => {
   try {
-    // Populate the cartItems array with complete cart item data
     const populatedCartItems = await CartItem.find({ _id: { $in: cartItems } });
-
-    // Calculate the total price
     const totalPrice = populatedCartItems.reduce(
       (total, item) => total + item.quantity * item.productPrice,
       0
     );
 
-    // Create a new order instance
     const order = new Order({
       user,
       products: populatedCartItems.map((item) => ({
@@ -28,12 +26,10 @@ const processCheckout = async (user, cartItems, paymentInfo) => {
         quantity: item.quantity,
       })),
       totalPrice: totalPrice,
+      status: 'completed',
     });
 
-    // Save the order to the database
     const savedOrder = await order.save();
-
-    // Clear the cart items
     await CartItem.deleteMany({ _id: { $in: cartItems } });
 
     return savedOrder;
@@ -43,24 +39,25 @@ const processCheckout = async (user, cartItems, paymentInfo) => {
   }
 };
 
-// POST /api/checkout
 router.post('/', authMiddleware, async (req, res) => {
   const { cartItems, paymentInfo } = req.body;
-  const userId = req.user; // Assuming the user ID is correctly set in the request
+  const userId = req.user;
 
   try {
-    const savedOrder = await processCheckout(userId, cartItems, paymentInfo);
+    const paymentGateway = new PaymentGateway();
+    const paymentResult = await paymentGateway.processPayment(paymentInfo);
 
-    // Return a success response with the saved order
-    res.json({ success: true, order: savedOrder });
+    if (paymentResult.success) {
+      const savedOrder = await processCheckout(userId, cartItems, paymentInfo);
+      res.json({ success: true, order: savedOrder });
+    } else {
+      res.json({ success: false, error: paymentResult.error });
+    }
   } catch (error) {
-    // Return an error response
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-
-// GET /api/checkout/:id
 router.get('/:id', async (req, res) => {
   try {
     const order = await Checkout.findById(req.params.id).populate('cartItems');

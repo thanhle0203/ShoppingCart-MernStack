@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Card, Button, Form } from 'react-bootstrap';
+import { CardElement, Elements, useElements, useStripe } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+
 
 const Cart = () => {
+  const stripePromise = loadStripe('pk_test_8B9VvZ6OI2wjUnICvr2qArjv'); // Replace with your actual Stripe Publishable Key
   const [cartItems, setCartItems] = useState([]);
   const [paymentInfo, setPaymentInfo] = useState({
-    paymentMethod: 'credit card',
+    paymentMethod: 'card',
     cardNumber: '',
     expiryDate: '',
-    cvv: '',
+    cvc: '',
     billingAddress: '',
   });
 
@@ -32,43 +36,6 @@ const Cart = () => {
       console.error('Error fetching cart items:', error);
     }
   };
-
-  const handleCheckout = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (token) {
-        const headers = {
-          Authorization: `Bearer ${token}`,
-        };
-        const items = cartItems.map((item) => ({
-          _id: item._id,
-          quantity: item.quantity,
-        }));
-        const response = await axios.post(
-          'http://localhost:4000/api/checkout',
-          {
-            cartItems: items,
-            paymentInfo,
-          },
-          { headers }
-        );
-        if (response.data.success) {
-          setCartItems([]);
-          localStorage.setItem('order', JSON.stringify(response.data.order));
-          alert('Checkout successful!');
-        } else {
-          alert('Payment failed. Please try again.');
-        }
-      } else {
-        console.error('Authentication token not available');
-      }
-    } catch (error) {
-      console.error('Error during checkout:', error);
-      alert('Error during checkout. Please try again.');
-    }
-  };
-
-  const totalPrice = cartItems.reduce((total, item) => total + item.quantity * item.productPrice, 0);
 
   const handleRemoveFromCart = async (itemId) => {
     try {
@@ -107,6 +74,93 @@ const Cart = () => {
       ...prevInfo,
       [name]: value,
     }));
+  };
+
+  const totalPrice = cartItems.reduce(
+    (total, item) => total + item.quantity * item.productPrice,
+    0
+  );
+
+  const CheckoutForm = () => {
+    const stripe = useStripe();
+    const elements = useElements();
+
+    const handleCheckout = async (event) => {
+      event.preventDefault();
+      try {
+        const token = localStorage.getItem('token');
+        if (token) {
+          const headers = {
+            Authorization: `Bearer ${token}`,
+          };
+          const items = cartItems.map((item) => ({
+            _id: item._id,
+            quantity: item.quantity,
+          }));
+
+          const totalPriceInCents = Math.round(
+            cartItems.reduce((total, item) => total + item.quantity * item.productPrice, 0) * 100
+          );
+
+          if (!stripe) {
+            console.error('Stripe.js not loaded');
+            return;
+          }
+          const cardElement = elements.getElement(CardElement);
+    if (!cardElement) {
+      console.error('CardElement not found');
+      return;
+    }
+          const { error, paymentMethod } = await stripe.createPaymentMethod({
+            type: 'card',
+            card: cardElement,
+          });
+
+          if (error) {
+            console.error('Error creating payment method:', error);
+          } else {
+            const paymentMethodId = paymentMethod.id;
+
+            const response = await axios.post(
+              'http://localhost:4000/api/checkout',
+              {
+                cartItems: items,
+                paymentInfo: {
+                  ...paymentInfo,
+                  amount: totalPriceInCents,
+                  currency: 'USD',
+                  paymentMethodId,
+                },
+              },
+              { headers }
+            );
+
+            if (response.data.success) {
+              setCartItems([]);
+              localStorage.setItem('order', JSON.stringify(response.data.order));
+
+              const { sessionId } = response.data.order.paymentInfo;
+              stripe.redirectToCheckout({
+                sessionId,
+              });
+            } else {
+              alert('Payment failed. Please try again.');
+            }
+          }
+        } else {
+          console.error('Authentication token not available');
+        }
+      } catch (error) {
+        console.error('Error during checkout:', error);
+        alert('Error during checkout. Please try again.');
+      }
+    };
+
+    return (
+      <Button variant="success" onClick={handleCheckout}>
+        Checkout
+      </Button>
+    );
   };
 
   return (
@@ -158,7 +212,7 @@ const Cart = () => {
                 value={paymentInfo.paymentMethod}
                 onChange={handlePaymentInfoChange}
               >
-                <option value="credit card">Credit Card</option>
+                <option value="card">Credit Card</option>
                 <option value="paypal">PayPal</option>
               </Form.Control>
             </Form.Group>
@@ -181,11 +235,11 @@ const Cart = () => {
               />
             </Form.Group>
             <Form.Group>
-              <Form.Label>CVV</Form.Label>
+              <Form.Label>CVC</Form.Label>
               <Form.Control
                 type="text"
-                name="cvv"
-                value={paymentInfo.cvv}
+                name="cvc"
+                value={paymentInfo.cvc}
                 onChange={handlePaymentInfoChange}
               />
             </Form.Group>
@@ -200,9 +254,9 @@ const Cart = () => {
             </Form.Group>
           </Form>
 
-          <Button variant="success" onClick={handleCheckout}>
-            Checkout
-          </Button>
+          <Elements stripe={stripePromise}>
+            <CheckoutForm />
+          </Elements>
         </div>
       )}
     </div>
