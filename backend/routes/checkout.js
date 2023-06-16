@@ -11,18 +11,18 @@ const PaymentGateway = require('../libraries/paymentGateway');
 
 router.use(authMiddleware);
 
-const processCheckout = async (user, cartItems, paymentInfo) => {
+const processCheckout = async (userId, cartItems, paymentInfo) => {
   try {
-    const populatedCartItems = await CartItem.find({ _id: { $in: cartItems } });
+    const populatedCartItems = await CartItem.find({ _id: { $in: cartItems } }).populate('product');
     const totalPrice = populatedCartItems.reduce(
-      (total, item) => total + item.quantity * item.productPrice,
+      (total, item) => total + item.quantity * item.product.productPrice,
       0
     );
 
     const order = new Order({
-      user,
+      user: userId,
       products: populatedCartItems.map((item) => ({
-        product: item.product,
+        product: item.product._id,
         quantity: item.quantity,
       })),
       totalPrice: totalPrice,
@@ -39,6 +39,26 @@ const processCheckout = async (user, cartItems, paymentInfo) => {
   }
 };
 
+
+// router.post('/', authMiddleware, async (req, res) => {
+//   const { cartItems, paymentInfo } = req.body;
+//   const userId = req.user;
+
+//   try {
+//     const paymentGateway = new PaymentGateway();
+//     const paymentResult = await paymentGateway.processPayment(paymentInfo);
+
+//     if (paymentResult.success) {
+//       const savedOrder = await processCheckout(userId, cartItems, paymentInfo);
+//       res.json({ success: true, order: savedOrder });
+//     } else {
+//       res.json({ success: false, error: paymentResult.error });
+//     }
+//   } catch (error) {
+//     res.status(500).json({ success: false, error: error.message });
+//   }
+// });
+
 router.post('/', authMiddleware, async (req, res) => {
   const { cartItems, paymentInfo } = req.body;
   const userId = req.user;
@@ -51,12 +71,16 @@ router.post('/', authMiddleware, async (req, res) => {
       const savedOrder = await processCheckout(userId, cartItems, paymentInfo);
       res.json({ success: true, order: savedOrder });
     } else {
-      res.json({ success: false, error: paymentResult.error });
+      console.log('Payment result:', paymentResult); // Add this log statement
+      res.json({ success: false, error: paymentResult.error, data: {} });
     }
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.log('Error during checkout:', error); // Add this log statement
+    res.status(500).json({ success: false, error: error.message, data: {} });
   }
 });
+
+
 
 router.get('/:id', async (req, res) => {
   try {

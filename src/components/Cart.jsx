@@ -4,7 +4,6 @@ import { Card, Button, Form } from 'react-bootstrap';
 import { CardElement, Elements, useElements, useStripe } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 
-
 const Cart = () => {
   const stripePromise = loadStripe('pk_test_8B9VvZ6OI2wjUnICvr2qArjv'); // Replace with your actual Stripe Publishable Key
   const [cartItems, setCartItems] = useState([]);
@@ -87,178 +86,118 @@ const Cart = () => {
 
     const handleCheckout = async (event) => {
       event.preventDefault();
+
       try {
-        const token = localStorage.getItem('token');
-        if (token) {
-          const headers = {
-            Authorization: `Bearer ${token}`,
-          };
-          const items = cartItems.map((item) => ({
-            _id: item._id,
+        const { error, paymentMethod } = await stripe.createPaymentMethod({
+          type: 'card',
+          card: elements.getElement(CardElement),
+          billing_details: {
+            address: {
+              line1: paymentInfo.billingAddress,
+            },
+          },
+        });
+
+        if (error) {
+          console.error('Error creating payment method:', error);
+          return;
+        }
+
+        const { id: paymentMethodId } = paymentMethod;
+
+        const checkoutData = {
+          cartItems: cartItems.map((item) => ({
+            productId: item.productId,
             quantity: item.quantity,
-          }));
+          })),
+          paymentInfo: {
+            ...paymentInfo,
+            amount: totalPrice * 100, // Convert the totalPrice to the lowest currency unit (e.g., cents)
+            currency: 'USD', // Set the currency value (e.g., USD)
+            paymentMethodId,
+          },
+        };
 
-          const totalPriceInCents = Math.round(
-            cartItems.reduce((total, item) => total + item.quantity * item.productPrice, 0) * 100
-          );
+        const response = await axios.post(
+          'http://localhost:4000/api/checkout',
+          checkoutData,
+          { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+        );
 
-          if (!stripe) {
-            console.error('Stripe.js not loaded');
-            return;
-          }
-          const cardElement = elements.getElement(CardElement);
-    if (!cardElement) {
-      console.error('CardElement not found');
-      return;
-    }
-          const { error, paymentMethod } = await stripe.createPaymentMethod({
-            type: 'card',
-            card: cardElement,
-          });
+        console.log('Payment response:', response);
 
-          if (error) {
-            console.error('Error creating payment method:', error);
-          } else {
-            const paymentMethodId = paymentMethod.id;
-
-            const response = await axios.post(
-              'http://localhost:4000/api/checkout',
-              {
-                cartItems: items,
-                paymentInfo: {
-                  ...paymentInfo,
-                  amount: totalPriceInCents,
-                  currency: 'USD',
-                  paymentMethodId,
-                },
-              },
-              { headers }
-            );
-
-            if (response.data.success) {
-              setCartItems([]);
-              localStorage.setItem('order', JSON.stringify(response.data.order));
-
-              const { sessionId } = response.data.order.paymentInfo;
-              stripe.redirectToCheckout({
-                sessionId,
-              });
-            } else {
-              alert('Payment failed. Please try again.');
-            }
-          }
+        if (response.data || response.data.success) {
+          console.log('Payment successful!');
+          // Handle the successful payment (display a success message, redirect, etc.)
+        } else if (response.data && response.data.error) {
+          console.error('Error processing payment:', response.data.error);
+          // Handle the payment error (display an error message, etc.)
         } else {
-          console.error('Authentication token not available');
+          console.error('Unexpected response:', response);
         }
       } catch (error) {
         console.error('Error during checkout:', error);
-        alert('Error during checkout. Please try again.');
+        if (error.response && error.response.data && error.response.data.error) {
+          console.error('Payment response:', error.response.data.error);
+        }
+        // Handle any unexpected errors (display an error message, etc.)
       }
     };
 
     return (
-      <Button variant="success" onClick={handleCheckout}>
-        Checkout
-      </Button>
+      <Form onSubmit={handleCheckout}>
+        <CardElement />
+        <Form.Group controlId="formBillingAddress">
+          <Form.Label>Billing Address</Form.Label>
+          <Form.Control
+            type="text"
+            name="billingAddress"
+            value={paymentInfo.billingAddress}
+            onChange={handlePaymentInfoChange}
+          />
+        </Form.Group>
+        <Button variant="primary" type="submit">
+          Pay ${totalPrice.toFixed(2)}
+        </Button>
+      </Form>
     );
   };
 
   return (
     <div>
-      <h2>Cart Items</h2>
-      {cartItems.length === 0 ? (
-        <p>Your cart is empty.</p>
-      ) : (
-        <div>
-          {cartItems.map((item) => (
-            <Card key={item._id} className="mb-4" style={{ width: '500px' }}>
-              <Card.Img
-                variant="top"
-                src={item.productImage}
-                alt={item.productName}
-                style={{ height: '100px', width: '100px', objectFit: 'cover' }}
-              />
-              <Card.Body>
-                <Card.Title>{item.productName}</Card.Title>
-                <Card.Text>Price: ${item.productPrice}</Card.Text>
-                <div>
-                  <label>Quantity: </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={item.quantity}
-                    onChange={(e) => handleQuantityChange(item._id, e.target.value)}
-                  />
-                </div>
-                <Button
-                  variant="danger"
-                  onClick={() => handleRemoveFromCart(item._id)}
-                  style={{ marginTop: '10px' }}
-                >
-                  Remove from Cart
-                </Button>
-              </Card.Body>
-            </Card>
-          ))}
-          <h4>Total Price: ${totalPrice}</h4>
-
-          <h2>Payment Information</h2>
-          <Form>
-            <Form.Group>
-              <Form.Label>Payment Method</Form.Label>
-              <Form.Control
-                as="select"
-                name="paymentMethod"
-                value={paymentInfo.paymentMethod}
-                onChange={handlePaymentInfoChange}
+      <h1>Cart</h1>
+      <div>
+        {cartItems.map((item) => (
+          <Card key={item._id}>
+            <Card.Body>
+              <Card.Title>{item.productName}</Card.Title>
+              <Card.Text>Price: ${item.productPrice}</Card.Text>
+              <Card.Text>Quantity: {item.quantity}</Card.Text>
+              <Button
+                variant="danger"
+                onClick={() => handleRemoveFromCart(item._id)}
               >
-                <option value="card">Credit Card</option>
-                <option value="paypal">PayPal</option>
-              </Form.Control>
-            </Form.Group>
-            <Form.Group>
-              <Form.Label>Card Number</Form.Label>
-              <Form.Control
-                type="text"
-                name="cardNumber"
-                value={paymentInfo.cardNumber}
-                onChange={handlePaymentInfoChange}
-              />
-            </Form.Group>
-            <Form.Group>
-              <Form.Label>Expiry Date</Form.Label>
-              <Form.Control
-                type="text"
-                name="expiryDate"
-                value={paymentInfo.expiryDate}
-                onChange={handlePaymentInfoChange}
-              />
-            </Form.Group>
-            <Form.Group>
-              <Form.Label>CVC</Form.Label>
-              <Form.Control
-                type="text"
-                name="cvc"
-                value={paymentInfo.cvc}
-                onChange={handlePaymentInfoChange}
-              />
-            </Form.Group>
-            <Form.Group>
-              <Form.Label>Billing Address</Form.Label>
-              <Form.Control
-                type="text"
-                name="billingAddress"
-                value={paymentInfo.billingAddress}
-                onChange={handlePaymentInfoChange}
-              />
-            </Form.Group>
-          </Form>
-
-          <Elements stripe={stripePromise}>
-            <CheckoutForm />
-          </Elements>
-        </div>
-      )}
+                Remove from Cart
+              </Button>
+              <Form.Group controlId={`formQuantity_${item._id}`}>
+                <Form.Label>Quantity</Form.Label>
+                <Form.Control
+                  type="number"
+                  min={1}
+                  value={item.quantity}
+                  onChange={(e) =>
+                    handleQuantityChange(item._id, parseInt(e.target.value))
+                  }
+                />
+              </Form.Group>
+            </Card.Body>
+          </Card>
+        ))}
+      </div>
+      <h3>Total: ${totalPrice.toFixed(2)}</h3>
+      <Elements stripe={stripePromise}>
+        <CheckoutForm />
+      </Elements>
     </div>
   );
 };
