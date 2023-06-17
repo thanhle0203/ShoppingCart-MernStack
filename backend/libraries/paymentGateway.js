@@ -1,6 +1,4 @@
-// paymentGateway.js
 const dotenv = require('dotenv');
-// get config vars
 dotenv.config();
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);

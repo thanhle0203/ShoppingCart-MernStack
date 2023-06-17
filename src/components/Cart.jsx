@@ -3,10 +3,12 @@ import axios from 'axios';
 import { Card, Button, Form } from 'react-bootstrap';
 import { CardElement, Elements, useElements, useStripe } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
+import { useNavigate } from 'react-router-dom';
 
 const Cart = () => {
   const stripePromise = loadStripe('pk_test_8B9VvZ6OI2wjUnICvr2qArjv'); // Replace with your actual Stripe Publishable Key
   const [cartItems, setCartItems] = useState([]);
+  const [paymentSuccess, setPaymentSuccess] = useState(false); // Define setPaymentSuccess before the return statement
   const [paymentInfo, setPaymentInfo] = useState({
     paymentMethod: 'card',
     cardNumber: '',
@@ -14,6 +16,9 @@ const Cart = () => {
     cvc: '',
     billingAddress: '',
   });
+
+  const navigate = useNavigate(); // Initialize useHistory
+
 
   useEffect(() => {
     fetchCartItems();
@@ -86,7 +91,7 @@ const Cart = () => {
 
     const handleCheckout = async (event) => {
       event.preventDefault();
-
+    
       try {
         const { error, paymentMethod } = await stripe.createPaymentMethod({
           type: 'card',
@@ -97,17 +102,17 @@ const Cart = () => {
             },
           },
         });
-
+    
         if (error) {
           console.error('Error creating payment method:', error);
           return;
         }
-
+    
         const { id: paymentMethodId } = paymentMethod;
-
+    
         const checkoutData = {
           cartItems: cartItems.map((item) => ({
-            productId: item.productId,
+            productId: item.product._id, // Update this line to use the correct property name for the product ID
             quantity: item.quantity,
           })),
           paymentInfo: {
@@ -117,49 +122,54 @@ const Cart = () => {
             paymentMethodId,
           },
         };
-
-        const response = await axios.post(
-          'http://localhost:4000/api/checkout',
-          checkoutData,
-          { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
-        );
-
-        console.log('Payment response:', response);
-
-        if (response.data || response.data.success) {
-          console.log('Payment successful!');
-          // Handle the successful payment (display a success message, redirect, etc.)
-        } else if (response.data && response.data.error) {
-          console.error('Error processing payment:', response.data.error);
-          // Handle the payment error (display an error message, etc.)
-        } else {
-          console.error('Unexpected response:', response);
+    
+        try {
+          const response = await axios.post(
+            'http://localhost:4000/api/checkout',
+            checkoutData,
+            { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+          );
+    
+          console.log('Payment response:', response.data); // Log the response data
+    
+          if (response.data && response.data.success) {
+            console.log('Payment successful!');
+            // Handle the successful payment (display a success message, redirect, etc.)
+            setPaymentSuccess(true);
+            navigate('/'); // Redirect to the home page
+          } else if (response.data && response.data.error) {
+            console.error('Error processing payment:', response.data.error);
+            // Handle the payment error (display an error message, etc.)
+          } else {
+            console.error('Unexpected response:', response);
+          }
+        } catch (error) {
+          console.error('Error during payment:', error);
+          console.log('Payment response:', error.response?.data);
+          // Handle the error during payment (display an error message, etc.)
         }
       } catch (error) {
         console.error('Error during checkout:', error);
-        if (error.response && error.response.data && error.response.data.error) {
-          console.error('Payment response:', error.response.data.error);
-        }
         // Handle any unexpected errors (display an error message, etc.)
       }
     };
 
     return (
-      <Form onSubmit={handleCheckout}>
+      <form onSubmit={handleCheckout}>
+        {/* Payment form fields */}
         <CardElement />
-        <Form.Group controlId="formBillingAddress">
-          <Form.Label>Billing Address</Form.Label>
+        <Form.Group controlId="formCardNumber">
+          <Form.Label>Card Number</Form.Label>
           <Form.Control
             type="text"
-            name="billingAddress"
-            value={paymentInfo.billingAddress}
+            name="cardNumber"
+            value={paymentInfo.cardNumber}
             onChange={handlePaymentInfoChange}
           />
         </Form.Group>
-        <Button variant="primary" type="submit">
-          Pay ${totalPrice.toFixed(2)}
-        </Button>
-      </Form>
+        {/* Rest of the payment form fields */}
+        <Button type="submit">Checkout</Button>
+      </form>
     );
   };
 

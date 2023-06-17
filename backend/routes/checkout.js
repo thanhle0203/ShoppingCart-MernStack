@@ -7,7 +7,9 @@ const CartItem = require('../models/cart');
 const Order = require('../models/order');
 const User = require('../models/user');
 const authMiddleware = require('../middleware/authMiddleware');
+//const PaymentGateway = require('../libraries/paymentGateway');
 const PaymentGateway = require('../libraries/paymentGateway');
+
 
 router.use(authMiddleware);
 
@@ -40,25 +42,6 @@ const processCheckout = async (userId, cartItems, paymentInfo) => {
 };
 
 
-// router.post('/', authMiddleware, async (req, res) => {
-//   const { cartItems, paymentInfo } = req.body;
-//   const userId = req.user;
-
-//   try {
-//     const paymentGateway = new PaymentGateway();
-//     const paymentResult = await paymentGateway.processPayment(paymentInfo);
-
-//     if (paymentResult.success) {
-//       const savedOrder = await processCheckout(userId, cartItems, paymentInfo);
-//       res.json({ success: true, order: savedOrder });
-//     } else {
-//       res.json({ success: false, error: paymentResult.error });
-//     }
-//   } catch (error) {
-//     res.status(500).json({ success: false, error: error.message });
-//   }
-// });
-
 router.post('/', authMiddleware, async (req, res) => {
   const { cartItems, paymentInfo } = req.body;
   const userId = req.user;
@@ -71,14 +54,16 @@ router.post('/', authMiddleware, async (req, res) => {
       const savedOrder = await processCheckout(userId, cartItems, paymentInfo);
       res.json({ success: true, order: savedOrder });
     } else {
-      console.log('Payment result:', paymentResult); // Add this log statement
+      console.log('Payment result:', paymentResult);
       res.json({ success: false, error: paymentResult.error, data: {} });
     }
   } catch (error) {
-    console.log('Error during checkout:', error); // Add this log statement
+    console.log('Error during checkout:', error);
     res.status(500).json({ success: false, error: error.message, data: {} });
   }
 });
+
+
 
 
 
