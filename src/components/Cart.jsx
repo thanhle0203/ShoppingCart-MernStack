@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Card, Button, Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
-import { Elements, useStripe, useElements, CardElement } from '@stripe/react-stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 const stripePromise = loadStripe('pk_test_8B9VvZ6OI2wjUnICvr2qArjv');
 
@@ -12,9 +12,20 @@ const usePaymentFlow = () => {
   const elements = useElements();
 
   const createPaymentMethod = async () => {
+    if (!stripe || !elements) {
+      console.error('Stripe or elements is not available');
+      throw new Error('Payment method creation failed');
+    }
+
+    const cardElement = elements.getElement(CardElement);
+    if (!cardElement) {
+      console.error('Card element not found');
+      throw new Error('Payment method creation failed');
+    }
+
     const { error, paymentMethod } = await stripe.createPaymentMethod({
       type: 'card',
-      card: elements.getElement(CardElement),
+      card: cardElement,
     });
 
     if (error) {
@@ -44,8 +55,6 @@ const Cart = () => {
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const navigate = useNavigate();
-  const stripe = useStripe();
-  const elements = useElements();
   const { createPaymentMethod, confirmPayment } = usePaymentFlow();
 
   useEffect(() => {

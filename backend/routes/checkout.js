@@ -8,12 +8,11 @@ router.post('/create-checkout-session', async (req, res) => {
   try {
     const { items, customerName, customerEmail } = req.body;
 
-    // Validate the items, customerName, and customerEmail
-
     // Create a new Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
-      line_items: items.map((item) => ({
+      line_items: items.map((item) => {
+        return {
         price_data: {
           currency: 'usd',
           product_data: {
@@ -23,7 +22,8 @@ router.post('/create-checkout-session', async (req, res) => {
           unit_amount: parseFloat(item.price) * 100, // Ensure item.price is a valid number
         },
         quantity: item.quantity,
-      })),
+      }
+      }),
       mode: 'payment',
       success_url: 'http://localhost:3000/success', // Replace with your success URL
       cancel_url: 'http://localhost:3000/cancel', // Replace with your cancel URL
