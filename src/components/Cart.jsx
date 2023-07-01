@@ -2,60 +2,16 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Card, Button, Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { Elements, CardElement } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 const stripePromise = loadStripe('pk_test_8B9VvZ6OI2wjUnICvr2qArjv');
-
-const usePaymentFlow = () => {
-  const stripe = useStripe();
-  const elements = useElements();
-
-  const createPaymentMethod = async () => {
-    if (!stripe || !elements) {
-      console.error('Stripe or elements is not available');
-      throw new Error('Payment method creation failed');
-    }
-
-    const cardElement = elements.getElement(CardElement);
-    if (!cardElement) {
-      console.error('Card element not found');
-      throw new Error('Payment method creation failed');
-    }
-
-    const { error, paymentMethod } = await stripe.createPaymentMethod({
-      type: 'card',
-      card: cardElement,
-    });
-
-    if (error) {
-      console.error('Error creating payment method:', error);
-      throw new Error('Payment method creation failed');
-    }
-
-    return paymentMethod;
-  };
-
-  const confirmPayment = async (sessionId, paymentMethod) => {
-    const { error } = await stripe.confirmCardPayment(sessionId, {
-      payment_method: paymentMethod.id,
-    });
-
-    if (error) {
-      console.error('Error confirming card payment:', error);
-      throw new Error('Payment confirmation failed');
-    }
-  };
-
-  return { createPaymentMethod, confirmPayment };
-};
 
 const Cart = () => {
   const [cartItems, setCartItems] = useState([]);
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const navigate = useNavigate();
-  const { createPaymentMethod, confirmPayment } = usePaymentFlow();
 
   useEffect(() => {
     fetchCartItems();
@@ -71,7 +27,36 @@ const Cart = () => {
         const response = await axios.get('http://localhost:4000/api/cart', {
           headers,
         });
-        setCartItems(response.data.cartItems);
+  
+        if (Array.isArray(response.data.cartItems)) {
+          // Create a map to track existing items
+          const existingItemsMap = new Map();
+  
+          // Update existing items with the latest price and quantity
+          response.data.cartItems.forEach((item) => {
+            const productId = item.products[0].product;
+  
+            if (existingItemsMap.has(productId)) {
+              const existingItem = existingItemsMap.get(productId);
+  
+              // Update the quantity and price
+              existingItem.products[0].quantity += item.products[0].quantity;
+              existingItem.products[0].productPrice = item.products[0].productPrice;
+            } else {
+              // Add the item to the map
+              existingItemsMap.set(productId, item);
+            }
+          });
+  
+          // Extract the updated items from the map
+          const updatedItems = Array.from(existingItemsMap.values());
+  
+          setCartItems(updatedItems);
+        } else {
+          console.error('Invalid response data:', response.data);
+          // Handle the error or set cartItems to an empty array
+          setCartItems([]);
+        }
       } else {
         console.error('Authentication token not available');
       }
@@ -79,13 +64,23 @@ const Cart = () => {
       console.error('Error fetching cart items:', error);
     }
   };
+  
+  
 
   const handleRemoveFromCart = async (itemId) => {
     try {
-      await axios.delete(`http://localhost:4000/api/cart/${itemId}`);
-      setCartItems((prevItems) =>
-        prevItems.filter((item) => item._id !== itemId)
-      );
+      const token = localStorage.getItem('token');
+      if (token) {
+        const headers = {
+          Authorization: `Bearer ${token}`,
+        };
+        await axios.delete(`http://localhost:4000/api/cart/${itemId}`, { headers });
+        setCartItems((prevItems) =>
+          prevItems.filter((item) => item._id !== itemId)
+        );
+      } else {
+      console.error('Authentication token not available');
+    }
     } catch (error) {
       console.error('Error removing item from cart:', error);
     }
@@ -103,10 +98,7 @@ const Cart = () => {
           { quantity },
           { headers }
         );
-        const response = await axios.get('http://localhost:4000/api/cart', {
-          headers,
-        });
-        setCartItems(response.data.cartItems);
+        fetchCartItems(); // Fetch updated cart items after quantity change
       } else {
         console.error('Authentication token not available');
       }
@@ -115,111 +107,151 @@ const Cart = () => {
     }
   };
 
-  const totalPrice = cartItems.reduce(
-    (total, item) => total + item.quantity * item.productPrice,
-    0
-  );
-
-  const handleCheckout = async () => {
+  const handleAddToCart = async (productId) => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) {
+      if (token) {
+        const headers = {
+          Authorization: `Bearer ${token}`,
+        };
+  
+        const existingItem = cartItems.find(
+          (item) => item.products[0].product === productId
+        );
+  
+        if (existingItem) {
+          existingItem.products[0].quantity += 1;
+  
+          await axios.put(
+            `http://localhost:4000/api/cart/${existingItem._id}`,
+            { quantity: existingItem.products[0].quantity },
+            { headers }
+          );
+        } else {
+          await axios.post(
+            'http://localhost:4000/api/cart',
+            { product: productId },
+            { headers }
+          );
+        }
+  
+        fetchCartItems(); // Fetch updated cart items after adding to cart
+      } else {
         console.error('Authentication token not available');
-        return;
       }
+    } catch (error) {
+      console.error('Error adding item to cart:', error);
+    }
+  };
+  
+  
 
+  const totalPrice = cartItems.reduce((total, item) => {
+    return (
+      total +
+      item.products.reduce((itemTotal, product) => {
+        const productPrice = parseFloat(product.productPrice);
+        const quantity = parseFloat(product.quantity);
+        return itemTotal + productPrice * quantity;
+      }, 0)
+    );
+  }, 0);
+
+  // ...
+
+const handleCheckout = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (token) {
       const headers = {
         Authorization: `Bearer ${token}`,
       };
-
-      // Retrieve the Stripe client secret from the server
-      const { data } = await axios.post(
-        'http://localhost:4000/api/checkout/create-checkout-session',
+      
+      const response = await axios.post(
+        'http://localhost:4000/api/orders/checkout',
         {
-          items: cartItems.map((item) => ({
-            name: item.productName,
-            price: parseFloat(item.productPrice),
-            quantity: item.quantity,
-          })),
-          customerName,
-          customerEmail,
+          sessionUrl: window.location.href, // Pass the current URL as the session URL
         },
         { headers }
       );
-      const { sessionId } = data;
 
-      // Create a new payment method
-      const paymentMethod = await createPaymentMethod();
-
-      // Confirm the payment
-      await confirmPayment(sessionId, paymentMethod);
-
-      // Redirect to success page or handle successful payment
-      navigate('/success');
-    } catch (error) {
-      console.error('Error during checkout:', error);
-      // Handle any unexpected errors (display an error message, etc.)
+      const { sessionUrl } = response.data;
+      // Redirect the user to the Stripe payment URL
+      window.location.href = sessionUrl;
+    } else {
+      console.error('Authentication token not available');
     }
-  };
+  } catch (error) {
+    console.error('Error during checkout:', error);
+  }
+};
+
+// ...
+
 
   return (
     <div>
       <h1>Cart</h1>
       <div>
-        {cartItems.map((item) => (
-          <Card key={item._id}>
-            <Card.Body>
-              <Card.Title>{item.productName}</Card.Title>
-              <Card.Text>Price: ${item.productPrice}</Card.Text>
-              <Card.Text>Quantity: {item.quantity}</Card.Text>
-              <Button
-                variant="danger"
-                onClick={() => handleRemoveFromCart(item._id)}
-              >
-                Remove from Cart
-              </Button>
-              <Form.Group controlId={`formQuantity_${item._id}`}>
-                <Form.Label>Quantity</Form.Label>
-                <Form.Control
-                  type="number"
-                  min={1}
-                  value={item.quantity}
-                  onChange={(e) =>
-                    handleQuantityChange(item._id, parseInt(e.target.value))
-                  }
-                />
-              </Form.Group>
-            </Card.Body>
-          </Card>
-        ))}
+        {cartItems.map((item) => {
+          const uniqueProducts = Array.from(new Set(item.products.map((product) => product.product)));
+          return (
+            <Card key={item._id}>
+              <Card.Body>
+                {uniqueProducts.map((productId) => {
+                  const product = item.products.find((product) => product.product === productId);
+                  return (
+                    <div key={product._id}>
+                      <Card.Title>Name: {product.productName}</Card.Title>
+                      <Card.Text>Price: ${product.productPrice}</Card.Text>
+                      <Card.Text>Quantity: {product.quantity}</Card.Text>
+                      <Button
+                        variant="danger"
+                        onClick={() => handleRemoveFromCart(item._id)}
+                      >
+                        Remove from Cart
+                      </Button>
+                      <Form.Group controlId={`formQuantity_${product._id}`}>
+                        <Form.Label>Quantity</Form.Label>
+                        <Form.Control
+                          type="number"
+                          min={1}
+                          value={product.quantity}
+                          onChange={(e) =>
+                            handleQuantityChange(
+                              item._id,
+                              parseInt(e.target.value)
+                            )
+                          }
+                        />
+                      </Form.Group>
+                    </div>
+                  );
+                })}
+                <Button
+                  variant="primary"
+                  onClick={() => handleAddToCart(item.products[0].product)}
+                >
+                  Add to Cart
+                </Button>
+              </Card.Body>
+            </Card>
+          );
+        })}
       </div>
       <h3>Total: ${totalPrice.toFixed(2)}</h3>
       {cartItems.length > 0 && (
         <>
-          <Form.Group controlId="formCustomerName">
-            <Form.Label>Customer Name</Form.Label>
-            <Form.Control
-              type="text"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-            />
-          </Form.Group>
-          <Form.Group controlId="formCustomerEmail">
-            <Form.Label>Customer Email</Form.Label>
-            <Form.Control
-              type="email"
-              value={customerEmail}
-              onChange={(e) => setCustomerEmail(e.target.value)}
-            />
-          </Form.Group>
-          <Elements stripe={stripePromise}>
-            <CardElement />
-          </Elements>
+         
           <Button onClick={handleCheckout}>Checkout</Button>
         </>
       )}
     </div>
   );
+  
+  
+
+
 };
 
 export default Cart;

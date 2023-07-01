@@ -12,23 +12,6 @@ const Home = () => {
     fetchProducts();
   }, []);
 
-  /*
-  const fetchProducts = async () => {
-    try {
-      const token = localStorage.getItem('token'); // Retrieve the token from localStorage
-      const response = await axios.get('http://localhost:4000/api/products', {
-        headers: {
-          Authorization: `Bearer ${token}`, // Include the token in the request headers
-        },
-      });
-      setProducts(response.data);
-      console.log(response.data);
-    } catch (error) {
-      console.error('Error fetching products:', error);
-    }
-  };
-  */
-
   const fetchProducts = async () => {
     try {
       const response = await axios.get('http://localhost:4000/api/products');
@@ -50,14 +33,13 @@ const Home = () => {
         // Make a request to add the item to the cart
         const response = await axios.post(
           'http://localhost:4000/api/cart',
-          { product: productId }
-          ,
+          { product: productId }, // Pass the product ID in the request body
           { headers }
         );
 
         // Handle the response and update the cart items
-        if (response.data.cartItems) {
-          setCartItems(response.data.cartItems);
+        if (response.data.cartItem) {
+          setCartItems((prevCartItems) => [...prevCartItems, response.data.cartItem]); // Append the new cart item
           alert('Item added to cart successfully!');
         } else {
           alert('Failed to add item to cart. Please try again.');
@@ -133,7 +115,7 @@ const Home = () => {
                 <Card.Text>Category: {product.category}</Card.Text>
                 <Button
                   variant="primary"
-                  onClick={() => handleAddToCart(product._id)}
+                  onClick={() => handleAddToCart(product._id)} // Add the click handler for adding to cart
                 >
                   Add to Cart
                 </Button>

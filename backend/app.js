@@ -3,34 +3,26 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 require('dotenv').config();
 const router = express.Router();
-//const authMiddleware = require('./middleware/authMiddleware');
-
-// Apply authMiddleware to all routes
-//router.use(authMiddleware);
-
+const authMiddleware = require('./middleware/authMiddleware');
 
 const app = express();
 
 app.use(bodyParser.json());
 app.use(cors());
-// Apply the authentication middleware before the order routes
-//app.use(authMiddleware);
-
 
 const userRoutes = require('./routes/user');
 const productRoutes = require('./routes/product');
 const cartRoutes = require('./routes/cart');
 const orderRoutes = require('./routes/order');
-const checkoutRoutes = require('./routes/checkout');
 
+// Apply the authentication middleware before the routes that require authentication
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
-app.use('/api/cart', cartRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/checkout', checkoutRoutes);
+app.use('/api/cart', authMiddleware, cartRoutes); // Apply authMiddleware to cart routes
+app.use('/api/orders', authMiddleware, orderRoutes); // Apply authMiddleware to order routes
 
 const mongoose = require('mongoose');
-const connection = "mongodb+srv://shoppingcart:ShoppingCartApp@cluster0.c4qvmyz.mongodb.net/";
+const connection = 'mongodb+srv://shoppingcart:ShoppingCartApp@cluster0.c4qvmyz.mongodb.net/';
 mongoose.connect(connection, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
