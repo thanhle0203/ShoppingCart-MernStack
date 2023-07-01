@@ -5,10 +5,6 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  price: {
-    type: Number,
-    required: true,
-  },
   description: {
     type: String,
   },
@@ -18,6 +14,14 @@ const productSchema = new mongoose.Schema({
   imageUrl: {
     type: String,
   },
+  price: {
+    type: Number,
+    required: true,
+  },
+  date_added: {
+    type: Date,
+    default: Date.now
+  }
   // Add more fields as per your product schema
 });
 
