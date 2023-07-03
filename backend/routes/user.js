@@ -5,6 +5,9 @@ const winston = require('winston');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const authMiddleware = require('../middleware/authMiddleware');
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+
 
 // Create a logger instance
 const logger = winston.createLogger({
@@ -17,6 +20,43 @@ const logger = winston.createLogger({
     winston.format.printf(info => `${info.timestamp} ${info.level}: ${info.message}`)
   )
 });
+
+// Configure Passport.js to use the Google Strategy
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: '531044711977-9c3alvruearu5j92lu8i8lt0i53dpsvj.apps.googleusercontent.com',
+      clientSecret: '',
+      callbackURL: '/api/users/google-signin/callback'
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        // Check if the user already exists in the database
+        let user = await User.findOne({ email: profile.emails[0].value });
+
+        if (!user) {
+          // Create a new user if the user does not exist
+          user = new User({
+            username: profile.displayName,
+            email: profile.emails[0].value,
+            password: '', // You can generate a random password or leave it empty
+          });
+
+          // Save the new user to the database
+          await user.save();
+        }
+
+        // User is authenticated
+        const token = user.generateAuthToken(); // Generate a JWT
+        done(null, token);
+      } catch (error) {
+        // Log the error
+        logger.error('An error occurred while handling Google sign-in', error);
+        done(error);
+      }
+    }
+  )
+);
 
 // Define API endpoints
 router.post('/signup', async (req, res) => {
@@ -90,6 +130,19 @@ router.get('/protected', authMiddleware, (req, res) => {
 });
 
 
+
+// Handle Google sign-in
+router.post('/google-signin', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+// Handle the callback from Google after successful sign-in
+router.get(
+  '/google-signin/callback',
+  passport.authenticate('google', { session: false }),
+  (req, res) => {
+    // User is authenticated and a token is available in req.user
+    res.json({ token: req.user });
+  }
+);
 
 
 module.exports = router;
