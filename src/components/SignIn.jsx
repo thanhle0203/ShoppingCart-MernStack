@@ -2,12 +2,47 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { Container, Form, Button } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
+import GoogleSignIn from './GoogleSignIn';
 
 const SignIn = ({ setLoggedIn }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  const handleGoogleSignInSuccess = async (response) => {
+    // Handle successful sign-in with Google
+    const { tokenId } = response;
+    console.log('Google sign-in success:', tokenId);
+  
+    try {
+      // Send the tokenId to your backend for verification and token generation
+      const backendResponse = await axios.post('http://localhost:4000/api/users/google-signin', {
+        tokenId
+      });
+  
+      // Retrieve the generated token from the backend response
+      const token = backendResponse.data.token;
+  
+      // Store the token in local storage or state for future use
+      localStorage.setItem('token', token);
+  
+      // Update the logged-in status in your component
+      setLoggedIn(true);
+  
+      // Redirect the user to the desired page
+      // For example, you can use the `navigate` function from react-router-dom
+      navigate('http://localhost:3000');
+    } catch (error) {
+      // Handle the error
+      console.error('Error during Google sign-in:', error);
+    }
+  };
+
+  const handleGoogleSignInFailure = (error) => {
+    // Handle sign-in failure with Google
+    console.error('Google sign-in failure:', error);
+  };
 
   const handleSignIn = async (e) => {
     e.preventDefault();
@@ -84,10 +119,20 @@ const SignIn = ({ setLoggedIn }) => {
 
         {error && <p className="text-danger mt-3">{error}</p>}
 
+        <br></br>
+        
         <p className="text-center mt-3">
           Don't have an account? <Link to="/signup">Sign Up</Link>
         </p>
+
+        <GoogleSignIn 
+        onGoogleSignInSuccess={handleGoogleSignInSuccess}
+        onGoogleSignInFailure={handleGoogleSignInFailure}
+      />
       </div>
+
+      
+
     </Container>
   );
 };

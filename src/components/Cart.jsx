@@ -4,6 +4,8 @@ import { Card, Button, Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { Elements, CardElement } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
+import { createRoot } from 'react-dom';
+
 
 const stripePromise = loadStripe('pk_test_8B9VvZ6OI2wjUnICvr2qArjv');
 
@@ -171,6 +173,7 @@ const handleCheckout = async () => {
         'http://localhost:4000/api/orders/checkout',
         {
           sessionUrl: window.location.href, // Pass the current URL as the session URL
+
         },
         { headers }
       );
@@ -178,6 +181,10 @@ const handleCheckout = async () => {
       const { sessionUrl } = response.data;
       // Redirect the user to the Stripe payment URL
       window.location.href = sessionUrl;
+
+      const redirectUrl = `/success?session_id=${response.data.sessionId}`; // Modify the redirect URL
+      navigate(redirectUrl); // Use the `useNavigate` hook to navigate to the order success page
+
     } else {
       console.error('Authentication token not available');
     }
@@ -186,7 +193,30 @@ const handleCheckout = async () => {
   }
 };
 
-// ...
+  // const urlParams = new URLSearchParams(window.location.search);
+  // const sessionId = urlParams.get('session_id');
+  // console.log("sessionId: ", sessionId)
+  // useEffect(() => {
+  //   if (sessionId) {
+  //     fetch(`http://localhost:4000/api/orders/success?session_id=${sessionId}`)
+  //       .then((response) => response.json())
+  //       .then((order) => {
+  //         // Update the DOM with the order details
+  //         const orderDetails = createRoot(document.getElementById('order-details'));
+  //         orderDetails.innerHTML = `
+  //           <h2>Order Details</h2>
+  //           <p>Order ID: ${order._id}</p>
+  //           <p>Order Total: $${order.totalPrice.toFixed(2)}</p>
+  //           <!-- Add more order details as needed -->
+  //         `;
+  //       })
+  //       .catch((error) => {
+  //         console.error('Error fetching order details:', error);
+  //         // Handle the error
+  //       });
+  //   }
+  // }, [sessionId]);
+
 
 
   return (
@@ -242,7 +272,7 @@ const handleCheckout = async () => {
       <h3>Total: ${totalPrice.toFixed(2)}</h3>
       {cartItems.length > 0 && (
         <>
-         
+          <div id="order-details"></div>
           <Button onClick={handleCheckout}>Checkout</Button>
         </>
       )}

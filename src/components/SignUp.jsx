@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { Container, Form, Button } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
+import GoogleSignIn from './GoogleSignIn';
 
 const SignUp = () => {
   const [username, setUsername] = useState('');
@@ -10,6 +11,18 @@ const SignUp = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  const handleGoogleSignInSuccess = (response) => {
+    // Handle successful sign-in with Google
+    const { tokenId } = response;
+    console.log('Google sign-in success:', tokenId);
+    // Authenticate the user in your application
+  };
+
+  const handleGoogleSignInFailure = (error) => {
+    // Handle sign-in failure with Google
+    console.error('Google sign-in failure:', error);
+  };
 
   const handleSignUp = async (e) => {
     e.preventDefault();
@@ -113,6 +126,12 @@ const SignUp = () => {
           Already have an account? <Link to="/signin">Sign In</Link>
         </p>
       </div>
+
+      <GoogleSignIn
+        onGoogleSignInSuccess={handleGoogleSignInSuccess}
+        onGoogleSignInFailure={handleGoogleSignInFailure}
+      />
+
     </Container>
   );
 };
