@@ -115,6 +115,7 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+<<<<<<< HEAD
 router.post('/:id/reviews', authMiddleware, async (req, res) => {
   const productId = req.params.id;
   const userId = req.user._id;
@@ -167,6 +168,8 @@ router.get('/comments/:id', async (req, res) => {
     res.status(500).json({ message: 'An error occurred while fetching comments' });
   }
 });
+=======
+>>>>>>> 4e58585 (implement review functionality)
 
 
 module.exports = router;
