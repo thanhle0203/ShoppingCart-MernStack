@@ -14,12 +14,14 @@ const userRoutes = require('./routes/user');
 const productRoutes = require('./routes/product');
 const cartRoutes = require('./routes/cart');
 const orderRoutes = require('./routes/order');
+const reviewsRoutes = require('./routes/reviews')
 
 // Apply the authentication middleware before the routes that require authentication
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', authMiddleware, cartRoutes); // Apply authMiddleware to cart routes
 app.use('/api/orders', authMiddleware, orderRoutes); // Apply authMiddleware to order routes
+app.use('/api/reviews', reviewsRoutes);
 
 const mongoose = require('mongoose');
 const connection = 'mongodb+srv://shoppingcart:ShoppingCartApp@cluster0.c4qvmyz.mongodb.net/';

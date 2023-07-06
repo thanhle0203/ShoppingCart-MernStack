@@ -1,4 +1,5 @@
 const express = require('express');
+const authMiddleware = require('../middleware/authMiddleware.js');
 const router = express.Router();
 const Product = require('../models/product.js');
 
@@ -112,5 +113,7 @@ router.delete('/:id', async (req, res) => {
     res.status(500).json({ message: 'An error occurred while deleting the product' });
   }
 });
+
+
 
 module.exports = router;

@@ -10,33 +10,10 @@ const SignIn = ({ setLoggedIn }) => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleGoogleSignInSuccess = async (response) => {
+  const handleGoogleSignInSuccess = () => {
     // Handle successful sign-in with Google
-    const { tokenId } = response;
-    console.log('Google sign-in success:', tokenId);
-  
-    try {
-      // Send the tokenId to your backend for verification and token generation
-      const backendResponse = await axios.post('http://localhost:4000/api/users/google-signin', {
-        tokenId
-      });
-  
-      // Retrieve the generated token from the backend response
-      const token = backendResponse.data.token;
-  
-      // Store the token in local storage or state for future use
-      localStorage.setItem('token', token);
-  
-      // Update the logged-in status in your component
-      setLoggedIn(true);
-  
-      // Redirect the user to the desired page
-      // For example, you can use the `navigate` function from react-router-dom
-      navigate('http://localhost:3000');
-    } catch (error) {
-      // Handle the error
-      console.error('Error during Google sign-in:', error);
-    }
+    setLoggedIn(true);
+    navigate('/');
   };
 
   const handleGoogleSignInFailure = (error) => {

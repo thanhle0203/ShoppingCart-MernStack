@@ -25,8 +25,8 @@ const logger = winston.createLogger({
 passport.use(
   new GoogleStrategy(
     {
-      clientID: '531044711977-9c3alvruearu5j92lu8i8lt0i53dpsvj.apps.googleusercontent.com',
-      clientSecret: '',
+      clientID: process.env.clientID,
+      clientSecret: process.env.clientSecret,
       callbackURL: '/api/users/google-signin/callback'
     },
     async (accessToken, refreshToken, profile, done) => {

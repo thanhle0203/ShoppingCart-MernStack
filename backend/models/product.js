@@ -21,8 +21,10 @@ const productSchema = new mongoose.Schema({
   date_added: {
     type: Date,
     default: Date.now
-  }
+  },
   // Add more fields as per your product schema
+ 
+
 });
 
 const Product = mongoose.model('Product', productSchema);
