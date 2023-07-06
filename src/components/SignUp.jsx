@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Container, Form, Button } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 
+
 const SignUp = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -10,6 +11,8 @@ const SignUp = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+ 
 
   const handleSignUp = async (e) => {
     e.preventDefault();
@@ -113,6 +116,9 @@ const SignUp = () => {
           Already have an account? <Link to="/signin">Sign In</Link>
         </p>
       </div>
+
+  
+
     </Container>
   );
 };

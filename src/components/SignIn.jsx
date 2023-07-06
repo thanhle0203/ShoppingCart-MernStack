@@ -2,12 +2,24 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { Container, Form, Button } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
+import GoogleSignIn from './GoogleSignIn';
 
 const SignIn = ({ setLoggedIn }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  const handleGoogleSignInSuccess = () => {
+    // Handle successful sign-in with Google
+    setLoggedIn(true);
+    navigate('/');
+  };
+
+  const handleGoogleSignInFailure = (error) => {
+    // Handle sign-in failure with Google
+    console.error('Google sign-in failure:', error);
+  };
 
   const handleSignIn = async (e) => {
     e.preventDefault();
@@ -84,10 +96,20 @@ const SignIn = ({ setLoggedIn }) => {
 
         {error && <p className="text-danger mt-3">{error}</p>}
 
+        <br></br>
+        
         <p className="text-center mt-3">
           Don't have an account? <Link to="/signup">Sign Up</Link>
         </p>
+
+        <GoogleSignIn 
+        onGoogleSignInSuccess={handleGoogleSignInSuccess}
+        onGoogleSignInFailure={handleGoogleSignInFailure}
+      />
       </div>
+
+      
+
     </Container>
   );
 };

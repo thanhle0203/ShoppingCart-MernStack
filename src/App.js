@@ -11,6 +11,7 @@ import SignIn from './components/SignIn';
 import SignUp from './components/SignUp';
 import Account from './components/Account';
 import OrderDetails from './components/OrderDetails';
+import OrderSuccess from './components/OrderSuccess';
 
 const App = () => {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -70,6 +71,8 @@ const App = () => {
                 <Nav.Link as={NavLink} to="/cart">
                   Cart
                 </Nav.Link>
+
+              
               </Nav>
             </Navbar.Collapse>
           </Container>
@@ -83,6 +86,7 @@ const App = () => {
             <Route path="/account" element={<Account />} />
             <Route path="/coupon" element={<Coupon />} />
             <Route path="/cart" element={<Cart />} />
+            <Route path="/success" element={<OrderSuccess />} />
             <Route path="/login" element={<SignIn setLoggedIn={setLoggedIn} />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/order/:id" element={<OrderDetails />} />

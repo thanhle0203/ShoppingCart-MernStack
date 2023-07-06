@@ -61,7 +61,7 @@ const Account = () => {
                   <Card.Title>Order ID: {order._id}</Card.Title>
                   <Card.Text>Date Ordered: {formatDate(order.createdAt)}</Card.Text>
                   <Card.Text>Total Price: ${formatPrice(order.totalPrice)}</Card.Text>
-                  <Card.Text>Status: {order.status}</Card.Text>
+                 
                   <a href={`/order/${order._id}`}>View Details</a>
                 </Card.Body>
               </Card>
