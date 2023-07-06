@@ -37,7 +37,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
     //   return res.status(403).json({ message: 'Unauthorized access to order' });
     // }
 
-    order.status = 'success'
+    order.status = 'completed'
     res.json(order);
   } catch (error) {
     console.error('Error fetching order details:', error);
@@ -143,6 +143,7 @@ router.get('/success', authMiddleware, async (req, res) => {
   // }
 });
 
+<<<<<<< HEAD
 router.post('/reviews/:id', authMiddleware, async (req, res) => {
   const orderId = req.params.id;
   console.log("orderId: ", orderId);
@@ -153,11 +154,20 @@ router.post('/reviews/:id', authMiddleware, async (req, res) => {
 
   try {
     const order = await Order.findById(orderId);
+=======
+router.post('/:orderId/review', async (req, res) => {
+  const orderId = req.params.orderId;
+  const { rating, comment } = req.body;
+
+  try {
+    const order = await Order.findById(orderId).populate('products.product');
+>>>>>>> afb56b1 (implement Review functionality)
 
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
 
+<<<<<<< HEAD
     const productId = order.products[0].product; // Assuming there is only one product in the order
     const product = await Product.findById(productId);
 
@@ -170,10 +180,29 @@ router.post('/reviews/:id', authMiddleware, async (req, res) => {
       comment,
       user: userId,
       product: productId,
+=======
+    // Check if the order belongs to the logged-in user
+    if (order.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    // Check if the order is already reviewed
+    if (order.review) {
+      return res.status(400).json({ message: 'Order already reviewed' });
+    }
+
+    // Create a new review
+    const review = new Review({
+      user: req.user._id,
+      product: order.products[0].product._id, // Assuming there is only one product in the order
+      rating,
+      comment,
+>>>>>>> afb56b1 (implement Review functionality)
     });
 
     await review.save();
 
+<<<<<<< HEAD
     product.reviews.push(review._id);
     // const totalReviews = product.reviews.length;
     // const ratingsSum = product.reviews.reduce((sum, review) => sum + review.rating, 0);
@@ -191,5 +220,17 @@ router.post('/reviews/:id', authMiddleware, async (req, res) => {
 
 
 
+=======
+    // Update the order with the review
+    order.review = review._id;
+    await order.save();
+
+    res.status(201).json({ message: 'Review created successfully' });
+  } catch (error) {
+    console.error('Error creating review:', error);
+    res.status(500).json({ message: 'An error occurred while creating the review' });
+  }
+});
+>>>>>>> afb56b1 (implement Review functionality)
 
 module.exports = router;

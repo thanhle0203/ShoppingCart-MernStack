@@ -9,7 +9,6 @@ const OrderDetails = () => {
   const [order, setOrder] = useState(null);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
-
   console.log("id: ", id)
   console.log("order: ", order)
 
