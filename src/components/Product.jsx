@@ -10,11 +10,22 @@ const Product = () => {
     const fetchProducts = async () => {
       try {
         const response = await axios.get('http://localhost:4000/api/products');
-        setProducts(response.data);
+        const populatedProducts = await Promise.all(response.data.map(async (product) => {
+          const populatedProductResponse = await axios.get(`http://localhost:4000/api/products/${product._id}/reviews`);
+          const populatedProduct = {
+            ...product,
+            reviews: populatedProductResponse.data,
+          };
+          return populatedProduct;
+        }));
+        setProducts(populatedProducts);
+        console.log(populatedProducts);
       } catch (error) {
         console.error('Error fetching products:', error);
       }
     };
+    
+    
 
     fetchProducts();
   }, []);
@@ -66,9 +77,9 @@ const Product = () => {
               />
               <Card.Body>
                 <Card.Title>{product.name}</Card.Title>
-                <Card.Text>Price: ${product.price}</Card.Text>
                 <Card.Text>{product.description}</Card.Text>
                 <Card.Text>Category: {product.category}</Card.Text>
+                <Card.Text>Price: ${product.price}</Card.Text>
                 <Button
                   variant="primary"
                   onClick={() => handleAddToCart(product._id)}

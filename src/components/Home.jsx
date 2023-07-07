@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Container, Button, Row, Col, Card, Form } from 'react-bootstrap';
-import bannerImage from '../resources/images/banner.jpg'; // Import the banner image
+import { Container, Button, Row, Col, Card, Form, Modal } from 'react-bootstrap';
+import bannerImage from '../resources/images/banner.jpg';
+import { FaStar, FaStarHalfAlt, FaRegStar } from 'react-icons/fa';
+import StarRating from './StarRating';
 
 const Home = () => {
   const [products, setProducts] = useState([]);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [cartItems, setCartItems] = useState([]);
+  const [comments, setComments] = useState([]);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -24,22 +28,20 @@ const Home = () => {
 
   const handleAddToCart = async (productId) => {
     try {
-      const token = localStorage.getItem('token'); // Retrieve the token from localStorage
+      const token = localStorage.getItem('token');
       if (token) {
         const headers = {
           Authorization: `Bearer ${token}`,
         };
 
-        // Make a request to add the item to the cart
         const response = await axios.post(
           'http://localhost:4000/api/cart',
-          { product: productId }, // Pass the product ID in the request body
+          { product: productId },
           { headers }
         );
 
-        // Handle the response and update the cart items
         if (response.data.cartItem) {
-          setCartItems((prevCartItems) => [...prevCartItems, response.data.cartItem]); // Append the new cart item
+          setCartItems((prevCartItems) => [...prevCartItems, response.data.cartItem]);
           alert('Item added to cart successfully!');
         } else {
           alert('Failed to add item to cart. Please try again.');
@@ -56,7 +58,7 @@ const Home = () => {
   const handleSearch = async (e) => {
     e.preventDefault();
     if (searchKeyword.trim() === '') {
-      fetchProducts(); // Reset to all products if the search keyword is empty
+      fetchProducts();
     } else {
       try {
         const response = await axios.get(`http://localhost:4000/api/products/search-products?keyword=${searchKeyword}`);
@@ -66,6 +68,43 @@ const Home = () => {
         console.error('Error searching products:', error);
       }
     }
+  };
+
+  // const handleViewComments = async (productId) => {
+  //   try {
+  //     const response = await axios.get(`http://localhost:4000/api/products/${productId}/comments`);
+  //     const comments = response.data;
+  //     // Display the comments in a modal or any other way you prefer
+  //     console.log(comments);
+  //   } catch (error) {
+  //     console.error('Error fetching comments:', error);
+  //   }
+  // };
+
+  const calculateAverageRating = (reviews) => {
+    if (reviews.length === 0) {
+      return 'N/A';
+    }
+
+    const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+    const averageRating = totalRating / reviews.length;
+
+    return averageRating.toFixed(1);
+  };
+
+  const handleViewComments = async (productId) => {
+    try {
+      const response = await axios.get(`http://localhost:4000/api/products/comments/${productId}`)
+      const comments = response.data;
+      setComments(comments);
+      setShowModal(true);
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
   };
 
   return (
@@ -110,12 +149,31 @@ const Home = () => {
               />
               <Card.Body>
                 <Card.Title>{product.name}</Card.Title>
-                <Card.Text>Price: ${product.price}</Card.Text>
                 <Card.Text>{product.description}</Card.Text>
                 <Card.Text>Category: {product.category}</Card.Text>
+                {product.reviews && (
+                  <div className='d-flex' align-items-center>
+                    <span className='mr-2'>               
+                    <StarRating rating={calculateAverageRating(product.reviews)} />        
+                    </span>
+
+                    {/* {calculateAverageRating(product.reviews)} */}
+                    <span className='ml-2 mr-2' style={{ marginLeft: '0.5rem' }}></span>
+                    <span className='ml-2 mr-2'
+                      style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                      onClick={() => handleViewComments(product._id)}
+                    >
+                      {product.reviews.length || 0}
+                    </span>
+                    
+                    
+                  </div>
+                )}
+
+                <Card.Text>Price: ${product.price}</Card.Text>
                 <Button
                   variant="primary"
-                  onClick={() => handleAddToCart(product._id)} // Add the click handler for adding to cart
+                  onClick={() => handleAddToCart(product._id)}
                 >
                   Add to Cart
                 </Button>
@@ -124,6 +182,31 @@ const Home = () => {
           </Col>
         ))}
       </Row>
+
+      {comments.length > 0 && (
+        <Modal show={showModal} onHide={handleCloseModal}>
+          <Modal.Header closeButton>
+            <Modal.Title>Comments</Modal.Title>
+          </Modal.Header>
+
+          <Modal.Body>
+            {comments.map((comment) => (
+              <div key={comment._id}>
+                <p>{comment.comment}</p>
+                <p>User: {comment.user}</p>
+              </div>
+            ))}
+          </Modal.Body>
+
+          <Modal.Footer>
+            <Button variant='secondary' onClick={handleCloseModal}>
+              Close
+            </Button>
+          </Modal.Footer>
+        </Modal>
+      )}
+
+
     </Container>
   );
 };

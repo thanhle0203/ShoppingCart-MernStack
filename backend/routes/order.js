@@ -5,6 +5,7 @@ const Product = require('../models/product');
 const CartItem = require('../models/cart');
 const router = express.Router();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const Review = require('../models/review.js')
 
 // Apply authMiddleware to all routes
 router.use(authMiddleware);
@@ -99,7 +100,7 @@ router.post('/checkout', async (req, res) => {
     });
 
     // Set the status of the order to "success"
-    order.status = 'success';
+    order.status = 'completed';
     // Save the order in the database
     await order.save();
 
@@ -141,6 +142,54 @@ router.get('/success', authMiddleware, async (req, res) => {
   //   res.status(500).json({ message: 'Server error' });
   // }
 });
+
+router.post('/reviews/:id', authMiddleware, async (req, res) => {
+  const orderId = req.params.id;
+  console.log("orderId: ", orderId);
+  const userId = req.user._id;
+  console.log("userId: ",userId );
+
+  const { rating, comment, productId } = req.body;
+
+  try {
+    const order = await Order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    const productId = order.products[0].product; // Assuming there is only one product in the order
+    const product = await Product.findById(productId);
+
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    const review = new Review({
+      rating,
+      comment,
+      user: userId,
+      product: productId,
+    });
+
+    await review.save();
+
+    product.reviews.push(review._id);
+    // const totalReviews = product.reviews.length;
+    // const ratingsSum = product.reviews.reduce((sum, review) => sum + review.rating, 0);
+    // product.rating = ratingsSum / totalReviews;
+
+    await product.save();
+
+    res.status(201).json({ message: 'Review added successfully' });
+  } catch (error) {
+    console.error('Error adding review:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
+
 
 
 module.exports = router;
