@@ -7,7 +7,12 @@ const jwt = require('jsonwebtoken');
 const authMiddleware = require('../middleware/authMiddleware');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const cors = require('cors');
 
+const app = express();
+
+// Enable CORS for all routes
+app.use(cors());
 
 // Create a logger instance
 const logger = winston.createLogger({
