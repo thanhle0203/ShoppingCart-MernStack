@@ -22,8 +22,16 @@ const productSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
-  // Add more fields as per your product schema
- 
+  reviews: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Review',
+    },
+  ],
+  // rating: {
+  //   type: Number,
+  //   default: 0,
+  // },
 
 });
 
