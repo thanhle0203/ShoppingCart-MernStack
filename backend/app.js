@@ -8,7 +8,28 @@ const authMiddleware = require('./middleware/authMiddleware');
 const app = express();
 
 app.use(bodyParser.json());
-app.use(cors());
+// app.use(cors());
+// app.use(
+//   cors({
+//     origin: '*', // Allow requests from this origin
+//     methods: ['GET', 'POST', '*'], // Allow specified HTTP methods
+//     allowedHeaders: ['Content-Type', 'Authorization'], // Allow specified headers
+//     credentials: true // Allow sending cookies across origins
+//   })
+// );
+
+app.use(function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "https://localhost:3000"); // Update to match the domain you will make the request from
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  
+  next();
+});
+
+// CORS (Cross-Origin Resource Sharing) headers to support Cross-site HTTP requests
+app.all('*', (req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "https://localhost:3000");
+  next();
+});
 
 const userRoutes = require('./routes/user');
 const productRoutes = require('./routes/product');

@@ -4,15 +4,11 @@ const User = require('../models/user.js');
 const winston = require('winston');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
 const authMiddleware = require('../middleware/authMiddleware');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const cors = require('cors');
-
-const app = express();
-
-// Enable CORS for all routes
-app.use(cors());
 
 // Create a logger instance
 const logger = winston.createLogger({
@@ -27,14 +23,17 @@ const logger = winston.createLogger({
 });
 
 // Configure Passport.js to use the Google Strategy
-passport.use(
+passport.use('googleToken',
   new GoogleStrategy(
     {
       clientID: process.env.clientID,
       clientSecret: process.env.clientSecret,
-      callbackURL: '/api/users/google-signin/callback'
+      callbackURL: '/api/users/google-signin/callback',
+      userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo",
+      passReqToCallback: true 
+
     },
-    async (accessToken, refreshToken, profile, done) => {
+    async (req, accessToken, refreshToken, profile, done) => {
       try {
         // Check if the user already exists in the database
         let user = await User.findOne({ email: profile.emails[0].value });
@@ -53,7 +52,16 @@ passport.use(
 
         // User is authenticated
         const token = user.generateAuthToken(); // Generate a JWT
-        done(null, token);
+
+        // Establish a session
+        req.logIn(user, (err) => {
+          if (err) {
+            logger.error('Error while establishing session', err);
+            return done(err);
+          }
+          done(null, token);
+        });
+
       } catch (error) {
         // Log the error
         logger.error('An error occurred while handling Google sign-in', error);
@@ -62,6 +70,9 @@ passport.use(
     }
   )
 );
+
+// Enable CORS for all routes
+router.use(cors());
 
 // Define API endpoints
 router.post('/signup', async (req, res) => {
@@ -90,9 +101,6 @@ router.post('/signup', async (req, res) => {
     res.status(500).json({ message: 'An error occurred while signing up the user' });
   }
 });
-
-module.exports = router;
-
 
 router.post('/signin', async (req, res) => {
   // Request body contains username and password
@@ -126,7 +134,6 @@ router.post('/signin', async (req, res) => {
   }
 });
 
-
 // Protected route that requires authentication
 router.get('/protected', authMiddleware, (req, res) => {
   // Access the authenticated user through req.user
@@ -134,20 +141,12 @@ router.get('/protected', authMiddleware, (req, res) => {
   res.json({ message: 'You accessed a protected route', user });
 });
 
-
-
 // Handle Google sign-in
-router.post('/google-signin', passport.authenticate('google', { scope: ['profile', 'email'] }));
-
-// Handle the callback from Google after successful sign-in
-router.get(
-  '/google-signin/callback',
-  passport.authenticate('google', { session: false }),
-  (req, res) => {
-    // User is authenticated and a token is available in req.user
-    res.json({ token: req.user });
+router.post('/oauth/google', passport.authenticate('googleToken', { session: false}),
+  (req, res, next) => {
+    const token = jwt.sign({ id: req.user.id }, process.env.clientSecret);
+    res.json({ token });
   }
 );
-
 
 module.exports = router;
