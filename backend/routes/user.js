@@ -10,6 +10,18 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const cors = require('cors');
 
+router.use(cors());
+
+// Enable CORS for all routes
+// router.use(
+//   cors({
+//     origin: 'http://localhost:3000',
+//     methods: ['GET', 'POST'],
+//     allowedHeaders: ['Content-Type', 'Authorization', 'Origin'],
+//     credentials: true
+//   })
+// );
+
 // Create a logger instance
 const logger = winston.createLogger({
   transports: [
@@ -28,7 +40,7 @@ passport.use('googleToken',
     {
       clientID: process.env.clientID,
       clientSecret: process.env.clientSecret,
-      callbackURL: '/api/users/google-signin/callback',
+      callbackURL: '/api/users/oauth/google/callback',
       userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo",
       passReqToCallback: true 
 
@@ -71,8 +83,14 @@ passport.use('googleToken',
   )
 );
 
-// Enable CORS for all routes
-router.use(cors());
+
+
+// Add the following route handler after the GoogleStrategy configuration
+router.get('/oauth/google/callback', passport.authenticate('googleToken', { session: false }), (req, res) => {
+  const token = req.user;
+  res.redirect(`http://localhost:3000/oauth/google/callback?token=${token}`);
+});
+
 
 // Define API endpoints
 router.post('/signup', async (req, res) => {
@@ -145,8 +163,14 @@ router.get('/protected', authMiddleware, (req, res) => {
 router.post('/oauth/google', passport.authenticate('googleToken', { session: false}),
   (req, res, next) => {
     const token = jwt.sign({ id: req.user.id }, process.env.clientSecret);
+    // res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+    // res.header('Access-Control-Allow-Credentials', 'true');
+    // res.header('Access-Control-Allow-Methods', 'POST');
     res.json({ token });
   }
 );
+
+
+
 
 module.exports = router;

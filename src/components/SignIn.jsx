@@ -12,19 +12,25 @@ const SignIn = ({ setLoggedIn }) => {
 
   const responseGoogle = async (response) => {
     try {
-      const res = await axios({
-        method: 'POST',
-        url: 'http://localhost:4000/api/users/oauth/google',
-        data: { access_token: response.access_token },
-        withCredentials: true
-      });
+      const res = await axios.post('http://localhost:4000/api/users/oauth/google', {
+        access_token: response.accessToken
+      }, { withCredentials: true });
       
       console.log('res', res);
-  } catch (error) {
-    console.error('Axios request failed:', error);
-  }
+    } catch (error) {
+      console.error('Axios request failed:', error);
+    }
   };
+  
+  
+  
+  // const responseGoogle = (response) => {
+  //   const access_token = response.accessToken;
+  
+  //   window.location.href = `http://localhost:4000/api/users/oauth/google/callback?access_token=${access_token}`;
+  // };
 
+  
   const handleSignIn = async (e) => {
     e.preventDefault();
 
@@ -105,7 +111,8 @@ const SignIn = ({ setLoggedIn }) => {
           onSuccess={responseGoogle}
           onFailure={responseGoogle}
           cookiePolicy="single_host_origin"
-          redirectUri="http://localhost:4000/api/users/google-signin/callback" // Add this line
+          // redirectUri="http://localhost:4000/api/users/oauth/google/callback" // Add this line
+          scope="email profile" // Include the required scopes here
         />
       </div>
     </Container>
