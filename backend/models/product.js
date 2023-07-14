@@ -22,7 +22,7 @@ const productSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
-<<<<<<< HEAD
+
   reviews: [
     {
       type: mongoose.Schema.Types.ObjectId,
@@ -33,10 +33,9 @@ const productSchema = new mongoose.Schema({
   //   type: Number,
   //   default: 0,
   // },
-=======
+
   // Add more fields as per your product schema
  
->>>>>>> 4e58585 (implement review functionality)
 
 });
 

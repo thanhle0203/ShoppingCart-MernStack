@@ -12,6 +12,7 @@ import SignUp from './components/SignUp';
 import Account from './components/Account';
 import OrderDetails from './components/OrderDetails';
 import OrderSuccess from './components/OrderSuccess';
+import ProductDetail from './components/ProductDetail';
 
 const App = () => {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -90,6 +91,7 @@ const App = () => {
             <Route path="/login" element={<SignIn setLoggedIn={setLoggedIn} />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/order/:id" element={<OrderDetails />} />
+            <Route path='/products/:productId' element={<ProductDetail />} />
           </Routes>
         </Container>
 

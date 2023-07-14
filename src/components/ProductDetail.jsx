@@ -1,31 +1,33 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Container, Button, Row, Col, Card, Form, Modal } from 'react-bootstrap';
-import bannerImage from '../resources/images/banner.jpg';
+import { useParams } from 'react-router-dom';
 import { FaStar, FaStarHalfAlt, FaRegStar } from 'react-icons/fa';
 import StarRating from './StarRating';
-import { Link } from 'react-router-dom';
 
-const Home = () => {
-  const [products, setProducts] = useState([]);
-  const [searchKeyword, setSearchKeyword] = useState('');
+const ProductDetail = () => {
+  const { productId } = useParams();
+  const [product, setProduct] = useState(null);
   const [cartItems, setCartItems] = useState([]);
   const [comments, setComments] = useState([]);
   const [showModal, setShowModal] = useState(false);
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
+  console.log("productId: ", productId)
+  console.log("product: ", product)
 
-  const fetchProducts = async () => {
-    try {
-      const response = await axios.get('http://localhost:4000/api/products');
-      setProducts(response.data);
-      console.log(response.data);
-    } catch (error) {
-      console.error('Error fetching products:', error);
-    }
-  };
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const response = await axios.get(`http://localhost:4000/api/products/${productId}`);
+        setProduct(response.data);
+        console.log(response.data);
+      } catch (error) {
+        console.error('Error fetching product:', error);
+      }
+    };
+  
+    fetchProduct();
+  }, [productId]);
 
   const handleAddToCart = async (productId) => {
     try {
@@ -55,22 +57,7 @@ const Home = () => {
       alert('Failed to add item to cart. Please try again.');
     }
   };
-
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (searchKeyword.trim() === '') {
-      fetchProducts();
-    } else {
-      try {
-        const response = await axios.get(`http://localhost:4000/api/products/search-products?keyword=${searchKeyword}`);
-        setProducts(response.data);
-        console.log(response.data);
-      } catch (error) {
-        console.error('Error searching products:', error);
-      }
-    }
-  };
-
+  
   const calculateAverageRating = (reviews) => {
     if (reviews.length === 0) {
       return 'N/A';
@@ -97,49 +84,20 @@ const Home = () => {
     setShowModal(false);
   };
 
+  if (!product) {
+    return (
+      <Container>
+        <h2>Loading...</h2>
+      </Container>
+    );
+  }
+
   return (
     <Container>
-      <h2>Welcome to the Shopping Cart App!</h2>
-      <img src={bannerImage} alt="Banner" style={{ width: '100%', height: '300px' }} />
-
-      <br />
-
-      <Row className="my-4">
-        <Col md={10}>
-          <Form onSubmit={handleSearch} className="d-flex">
-            <Form.Control
-              type="text"
-              placeholder="Search for Products"
-              value={searchKeyword}
-              onChange={(e) => setSearchKeyword(e.target.value)}
-            />
-            <Button variant="primary" type="submit" className="ml-4">
-              Search
-            </Button>
-          </Form>
-        </Col>
-      </Row>
-
-      <Button variant="primary" onClick={() => alert('Button clicked!')}>
-        Shop Now
-      </Button>
-
-      <br /><br />
-
-      <h3>Products:</h3>
-      <Row>
-        {products.map((product) => (
-          <Col key={product._id} md={4}>
-            <Card className="mb-4">
-                <Link to={`/products/${product._id}`}> {/* Add Link component and specify the URL */}
-                  <Card.Img
-                    variant="top"
-                    src={product.imageUrl}
-                    alt={product.name}
-                    style={{ width: '200px', height: '200px', objectFit: 'cover' }}
-                  />
-                </Link>
-              <Card.Body>
+      <h2>Product Detail</h2>
+      <Card>
+        <Card.Img variant="top" src={product.imageUrl} alt={product.name} style={{ width: '400px', height: '400px', objectFit: 'cover' }} />
+        <Card.Body>
                 <Card.Title>{product.name}</Card.Title>
                 <Card.Text>{product.description}</Card.Text>
                 <Card.Text>Category: {product.category}</Card.Text>
@@ -156,9 +114,7 @@ const Home = () => {
                       onClick={() => handleViewComments(product._id)}
                     >
                       {product.reviews.length || 0}
-                    </span>
-                    
-                    
+                    </span>     
                   </div>
                 )}
 
@@ -170,10 +126,7 @@ const Home = () => {
                   Add to Cart
                 </Button>
               </Card.Body>
-            </Card>
-          </Col>
-        ))}
-      </Row>
+      </Card>
 
       {comments.length > 0 && (
         <Modal show={showModal} onHide={handleCloseModal}>
@@ -197,10 +150,8 @@ const Home = () => {
           </Modal.Footer>
         </Modal>
       )}
-
-
     </Container>
   );
 };
 
-export default Home;
+export default ProductDetail;

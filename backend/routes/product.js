@@ -2,11 +2,7 @@ const express = require('express');
 const authMiddleware = require('../middleware/authMiddleware.js');
 const router = express.Router();
 const Product = require('../models/product.js');
-<<<<<<< HEAD
 const Review = require('../models/review.js');
-=======
-const Review = require('../models/review.js')
->>>>>>> afb56b1 (implement Review functionality)
 
 // Define API endpoints
 router.get('/', async (req, res) => {
@@ -119,63 +115,6 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-router.post('/:id/reviews', authMiddleware, async (req, res) => {
-  const productId = req.params.id;
-  const userId = req.user._id;
-  const { rating, comment } = req.body;
-
-  try {
-    const product = await Product.findById(productId);
-
-    if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
-    }
-
-    const review = new Review({
-      rating,
-      comment,
-      user: userId,
-      product: productId,
-    });
-
-    await review.save();
-
-    product.reviews.push(review._id);
-    const totalReviews = product.reviews.length;
-    const ratingsSum = product.reviews.reduce((sum, review) => sum + review.rating, 0);
-    product.rating = ratingsSum / totalReviews;
-
-    await product.save();
-
-    res.status(201).json({ message: 'Review added successfully' });
-  } catch (error) {
-    console.error('Error adding review:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-
-router.get('/comments/:id', async (req, res) => {
-  const productId = req.params.id;
-
-  try {
-    const product = await Product.findById(productId).populate('reviews');
-
-    if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
-    }
-
-    res.status(200).json(product.reviews);
-  } catch (error) {
-    console.error('Error fetching comments:', error);
-    res.status(500).json({ message: 'An error occurred while fetching comments' });
-  }
-});
-=======
->>>>>>> 4e58585 (implement review functionality)
-=======
 router.get('/:productId/reviews', async (req, res) => {
   const productId = req.params.productId;
 
@@ -188,7 +127,7 @@ router.get('/:productId/reviews', async (req, res) => {
     res.status(500).json({ message: 'An error occurred while fetching the reviews' });
   }
 });
->>>>>>> afb56b1 (implement Review functionality)
+
 
 
 module.exports = router;
