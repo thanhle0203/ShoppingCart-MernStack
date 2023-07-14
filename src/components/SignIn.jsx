@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { Container, Form, Button } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
-import GoogleSignIn from './GoogleSignIn';
+import { GoogleLogin } from 'react-google-login';
 
 const SignIn = ({ setLoggedIn }) => {
   const [username, setUsername] = useState('');
@@ -10,17 +10,22 @@ const SignIn = ({ setLoggedIn }) => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleGoogleSignInSuccess = () => {
-    // Handle successful sign-in with Google
-    setLoggedIn(true);
-    navigate('/');
-  };
+  const responseGoogle = async (response) => {
+    try {
+      const { code } = response;
 
-  const handleGoogleSignInFailure = (error) => {
-    // Handle sign-in failure with Google
-    console.error('Google sign-in failure:', error);
+      if (code) {
+        const res = await axios.get(`http://localhost:4000/api/users/oauth/google/callback?code=${code}`);
+        console.log(res.data);
+      } else {
+        console.error('Authorization code not received');
+      }
+    } catch (error) {
+      console.error('An error occurred:', error);
+    }
   };
-
+  
+   
   const handleSignIn = async (e) => {
     e.preventDefault();
 
@@ -28,13 +33,7 @@ const SignIn = ({ setLoggedIn }) => {
       const response = await axios.post('http://localhost:4000/api/users/signin', {
         username,
         password
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
-      }
-      );
+      });
 
       if (response.status === 200) {
         setUsername('');
@@ -52,7 +51,6 @@ const SignIn = ({ setLoggedIn }) => {
         setLoggedIn(true);
 
         navigate('/');
-
       } else {
         setError('Invalid credentials');
       }
@@ -96,20 +94,24 @@ const SignIn = ({ setLoggedIn }) => {
 
         {error && <p className="text-danger mt-3">{error}</p>}
 
-        <br></br>
-        
+        <br />
+
         <p className="text-center mt-3">
           Don't have an account? <Link to="/signup">Sign Up</Link>
         </p>
 
-        <GoogleSignIn 
-        onGoogleSignInSuccess={handleGoogleSignInSuccess}
-        onGoogleSignInFailure={handleGoogleSignInFailure}
-      />
+        <GoogleLogin
+          clientId="531044711977-9c3alvruearu5j92lu8i8lt0i53dpsvj.apps.googleusercontent.com"
+          buttonText="Sign In with Google"
+          onSuccess={responseGoogle}
+          onFailure={responseGoogle}
+          cookiePolicy="single_host_origin"
+
+          responseType="code"
+        redirectUri="http://localhost:3000" // Update with your actual redirect URI
+        scope="email profile"
+        />
       </div>
-
-      
-
     </Container>
   );
 };
