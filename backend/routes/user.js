@@ -10,17 +10,7 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const cors = require('cors');
 
-router.use(cors());
-
-// Enable CORS for all routes
-// router.use(
-//   cors({
-//     origin: 'http://localhost:3000',
-//     methods: ['GET', 'POST'],
-//     allowedHeaders: ['Content-Type', 'Authorization', 'Origin'],
-//     credentials: true
-//   })
-// );
+router.use(cors({ origin: 'http://localhost:3000', credentials: true }));
 
 // Create a logger instance
 const logger = winston.createLogger({
@@ -35,17 +25,15 @@ const logger = winston.createLogger({
 });
 
 // Configure Passport.js to use the Google Strategy
-passport.use('googleToken',
+passport.use(
+  'googleToken',
   new GoogleStrategy(
     {
       clientID: process.env.clientID,
       clientSecret: process.env.clientSecret,
-      callbackURL: '/api/users/oauth/google/callback',
-      userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo",
-      passReqToCallback: true 
-
+      callbackURL: 'http://localhost:4000/api/users/oauth/google/callback'
     },
-    async (req, accessToken, refreshToken, profile, done) => {
+    async (accessToken, refreshToken, profile, done) => {
       try {
         // Check if the user already exists in the database
         let user = await User.findOne({ email: profile.emails[0].value });
@@ -55,7 +43,7 @@ passport.use('googleToken',
           user = new User({
             username: profile.displayName,
             email: profile.emails[0].value,
-            password: '', // You can generate a random password or leave it empty
+            password: '' // You can generate a random password or leave it empty
           });
 
           // Save the new user to the database
@@ -64,16 +52,7 @@ passport.use('googleToken',
 
         // User is authenticated
         const token = user.generateAuthToken(); // Generate a JWT
-
-        // Establish a session
-        req.logIn(user, (err) => {
-          if (err) {
-            logger.error('Error while establishing session', err);
-            return done(err);
-          }
-          done(null, token);
-        });
-
+        done(null, token);
       } catch (error) {
         // Log the error
         logger.error('An error occurred while handling Google sign-in', error);
@@ -83,14 +62,48 @@ passport.use('googleToken',
   )
 );
 
+const axios = require('axios');
+const qs = require('qs');
 
+router.get('/oauth/google/callback', async (req, res) => {
+  try {
+    const { code } = req.query;
 
-// Add the following route handler after the GoogleStrategy configuration
-router.get('/oauth/google/callback', passport.authenticate('googleToken', { session: false }), (req, res) => {
-  const token = req.user;
-  res.redirect(`http://localhost:3000/oauth/google/callback?token=${token}`);
+    if (!code) {
+      return res.status(400).json({ error: 'Missing authorization code' });
+    }
+
+    const params = {
+      code,
+      client_id: process.env.clientID,
+      client_secret: process.env.clientSecret,
+      redirect_uri: 'http://localhost:4000/api/users/oauth/google/callback',
+      grant_type: 'authorization_code'
+    };
+
+    const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', qs.stringify(params));
+
+    // Extract the access token from the token response
+    const { access_token } = tokenResponse.data;
+
+    // Use the access token to make authenticated requests to Google APIs
+    const userResponse = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: {
+        Authorization: `Bearer ${access_token}`
+      }
+    });
+
+    // You can access the user data in userResponse.data
+    const user = userResponse.data;
+
+    // Process the user data as needed
+    console.log(user);
+
+    res.send(user);
+  } catch (error) {
+    res.status(error.response.status).send(error.response.data);
+  }
 });
-
 
 // Define API endpoints
 router.post('/signup', async (req, res) => {
@@ -158,18 +171,6 @@ router.get('/protected', authMiddleware, (req, res) => {
   const user = req.user;
   res.json({ message: 'You accessed a protected route', user });
 });
-
-// Handle Google sign-in
-router.post('/oauth/google', passport.authenticate('googleToken', { session: false}),
-  (req, res, next) => {
-    const token = jwt.sign({ id: req.user.id }, process.env.clientSecret);
-    // res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
-    // res.header('Access-Control-Allow-Credentials', 'true');
-    // res.header('Access-Control-Allow-Methods', 'POST');
-    res.json({ token });
-  }
-);
-
 
 
 
