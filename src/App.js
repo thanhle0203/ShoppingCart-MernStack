@@ -91,7 +91,7 @@ const App = () => {
             <Route path="/login" element={<SignIn setLoggedIn={setLoggedIn} />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/order/:id" element={<OrderDetails />} />
-            <Route path='/products/:productId' element={<ProductDetail />} />
+            <Route path="/products/:productId" element={<ProductDetail />} />
           </Routes>
         </Container>
 

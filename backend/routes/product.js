@@ -36,7 +36,7 @@ router.get('/:id', async (req, res) => {
 
   try {
     // Fetch the product from the database by ID
-    const product = await Product.findById(productId);
+    const product = await Product.findById(productId).populate("reviews");
 
     // Check if the product exists
     if (product) {
@@ -128,6 +128,70 @@ router.get('/:productId/reviews', async (req, res) => {
   }
 });
 
+router.post('/comments/:productId', authMiddleware, async (req, res) => {
+  const productId = req.params.productId;
+  const { comment } = req.body;
+  const userId = req.user._id;
+
+  try {
+    // Find the product by ID
+    const product = await Product.findById(productId);
+
+    // Check if the product exists
+    // if (!product) {
+    //   return res.status(404).json({ message: 'Product not found' });
+    // }
+
+    // Create a new review instance
+    const review = new Review({
+      user: userId,
+      product: productId,
+      comment,
+    });
+
+    // Save the new review to the database
+    await review.save();
+
+    // Add the review to the product's reviews array
+    product.reviews.push(review._id);
+    await product.save();
+
+    res.status(201).json({ message: 'Comment added successfully' });
+  } catch (error) {
+    console.error('Error adding comment:', error);
+    res.status(500).json({ message: 'An error occurred while adding the comment' });
+  }
+});
+
+
+router.get('/comments/:productId', async (req, res) => {
+  const productId = req.params.productId;
+
+  try {
+    const product = await Product.findById(productId).populate({
+      path: 'reviews',
+      populate: {
+        path: 'user',
+        select: 'username',
+      },
+    });
+
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    const comments = product.reviews.map((review) => ({
+      _id: review._id,
+      comment: review.comment,
+      user: review.user.username,
+    }));
+
+    res.status(200).json(comments);
+  } catch (error) {
+    console.error('Error fetching comments:', error);
+    res.status(500).json({ message: 'An error occurred while fetching the comments' });
+  }
+});
 
 
 module.exports = router;

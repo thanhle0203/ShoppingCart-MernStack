@@ -79,6 +79,7 @@ const Home = () => {
     const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
     const averageRating = totalRating / reviews.length;
 
+    console.log("averageRating: ", averageRating)
     return averageRating.toFixed(1);
   };
 
@@ -156,9 +157,7 @@ const Home = () => {
                       onClick={() => handleViewComments(product._id)}
                     >
                       {product.reviews.length || 0}
-                    </span>
-                    
-                    
+                    </span>     
                   </div>
                 )}
 

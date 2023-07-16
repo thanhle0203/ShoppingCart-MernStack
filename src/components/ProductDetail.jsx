@@ -19,6 +19,8 @@ const ProductDetail = () => {
     const fetchProduct = async () => {
       try {
         const response = await axios.get(`http://localhost:4000/api/products/${productId}`);
+         
+
         setProduct(response.data);
         console.log(response.data);
       } catch (error) {
@@ -65,6 +67,7 @@ const ProductDetail = () => {
 
     const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
     const averageRating = totalRating / reviews.length;
+    console.log("averageRating: ", averageRating)
 
     return averageRating.toFixed(1);
   };
@@ -95,6 +98,8 @@ const ProductDetail = () => {
   return (
     <Container>
       <h2>Product Detail</h2>
+      <div>
+
       <Card>
         <Card.Img variant="top" src={product.imageUrl} alt={product.name} style={{ width: '400px', height: '400px', objectFit: 'cover' }} />
         <Card.Body>
@@ -103,10 +108,10 @@ const ProductDetail = () => {
                 <Card.Text>Category: {product.category}</Card.Text>
                 {product.reviews && (
                   <div className='d-flex' align-items-center>
-                    <span className='mr-2'>               
+                   
+                           
                     <StarRating rating={calculateAverageRating(product.reviews)} />        
-                    </span>
-
+                    
                     {/* {calculateAverageRating(product.reviews)} */}
                     <span className='ml-2 mr-2' style={{ marginLeft: '0.5rem' }}></span>
                     <span className='ml-2 mr-2'
@@ -116,7 +121,7 @@ const ProductDetail = () => {
                       {product.reviews.length || 0}
                     </span>     
                   </div>
-                )}
+                 )} 
 
                 <Card.Text>Price: ${product.price}</Card.Text>
                 <Button
@@ -127,6 +132,9 @@ const ProductDetail = () => {
                 </Button>
               </Card.Body>
       </Card>
+
+
+      </div>
 
       {comments.length > 0 && (
         <Modal show={showModal} onHide={handleCloseModal}>
