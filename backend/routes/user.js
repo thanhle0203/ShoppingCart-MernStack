@@ -4,11 +4,11 @@ const User = require('../models/user.js');
 const winston = require('winston');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { OAuth2Client } = require('google-auth-library');
 const authMiddleware = require('../middleware/authMiddleware');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const cors = require('cors');
+const googleAuth = require('google-auth-library');
 
 router.use(cors({ origin: 'http://localhost:3000', credentials: true }));
 
@@ -24,85 +24,24 @@ const logger = winston.createLogger({
   )
 });
 
-// Configure Passport.js to use the Google Strategy
-passport.use(
-  'googleToken',
-  new GoogleStrategy(
-    {
-      clientID: process.env.clientID,
-      clientSecret: process.env.clientSecret,
-      callbackURL: 'http://localhost:4000/api/users/oauth/google/callback'
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      try {
-        // Check if the user already exists in the database
-        let user = await User.findOne({ email: profile.emails[0].value });
+router.get('/google-signin/callback', async (req, res) => {
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+  
+  const googleUser = googleAuth.getAuthInstance().signIn();
 
-        if (!user) {
-          // Create a new user if the user does not exist
-          user = new User({
-            username: profile.displayName,
-            email: profile.emails[0].value,
-            password: '' // You can generate a random password or leave it empty
-          });
-
-          // Save the new user to the database
-          await user.save();
-        }
-
-        // User is authenticated
-        const token = user.generateAuthToken(); // Generate a JWT
-        done(null, token);
-      } catch (error) {
-        // Log the error
-        logger.error('An error occurred while handling Google sign-in', error);
-        done(error);
-      }
+  googleUser.then(user => {
+    const email = user.getEmail();
+    const userExists = User.findOne({ email });
+ 
+    if (userExists) {
+      res.redirect(`http://localhost:3000`);
     }
-  )
-);
-
-const axios = require('axios');
-const qs = require('qs');
-
-router.get('/oauth/google/callback', async (req, res) => {
-  try {
-    const { code } = req.query;
-
-    if (!code) {
-      return res.status(400).json({ error: 'Missing authorization code' });
+    else {
+      res.send('And error occured')
     }
+  })
 
-    const params = {
-      code,
-      client_id: process.env.clientID,
-      client_secret: process.env.clientSecret,
-      redirect_uri: 'http://localhost:4000/api/users/oauth/google/callback',
-      grant_type: 'authorization_code'
-    };
-
-    const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', qs.stringify(params));
-
-    // Extract the access token from the token response
-    const { access_token } = tokenResponse.data;
-
-    // Use the access token to make authenticated requests to Google APIs
-    const userResponse = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
-      headers: {
-        Authorization: `Bearer ${access_token}`
-      }
-    });
-
-    // You can access the user data in userResponse.data
-    const user = userResponse.data;
-
-    // Process the user data as needed
-    console.log(user);
-
-    res.send(user);
-  } catch (error) {
-    res.status(error.response.status).send(error.response.data);
-  }
 });
 
 // Define API endpoints

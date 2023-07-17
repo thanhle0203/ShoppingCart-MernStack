@@ -52,11 +52,14 @@ const App = () => {
                   Product
                 </Nav.Link>
 
+                
+
                 {loggedIn ? (
                   <>
                     <Nav.Link as={NavLink} to="/account">
-                      Account
-                    </Nav.Link>
+                  Account
+                </Nav.Link>
+                
                     <Nav.Link as={NavLink} to="/logout" onClick={handleLogout}>
                       Log out
                     </Nav.Link>
@@ -66,8 +69,6 @@ const App = () => {
                     Sign in
                   </Nav.Link>
                 )}
-
-              
 
                 <Nav.Link as={NavLink} to="/cart">
                   Cart

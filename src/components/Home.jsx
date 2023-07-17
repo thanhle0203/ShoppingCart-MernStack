@@ -30,6 +30,7 @@ const Home = () => {
   const handleAddToCart = async (productId) => {
     try {
       const token = localStorage.getItem('token');
+      console.log('token: ', token)
       if (token) {
         const headers = {
           Authorization: `Bearer ${token}`,

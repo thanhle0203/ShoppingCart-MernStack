@@ -1,31 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState} from 'react';
 import axios from 'axios';
 import { Container, Form, Button } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { GoogleLogin } from 'react-google-login';
-
+import { useEffect } from 'react';
+import jwt_decode from "jwt-decode"
 const SignIn = ({ setLoggedIn }) => {
+
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const [user, setUser] = useState({});
 
-  const responseGoogle = async (response) => {
-    try {
-      const { code } = response;
-
-      if (code) {
-        const res = await axios.get(`http://localhost:4000/api/users/oauth/google/callback?code=${code}`);
-        console.log(res.data);
-      } else {
-        console.error('Authorization code not received');
-      }
-    } catch (error) {
-      console.error('An error occurred:', error);
-    }
-  };
-  
-   
   const handleSignIn = async (e) => {
     e.preventDefault();
 
@@ -51,6 +38,7 @@ const SignIn = ({ setLoggedIn }) => {
         setLoggedIn(true);
 
         navigate('/');
+    
       } else {
         setError('Invalid credentials');
       }
@@ -59,6 +47,44 @@ const SignIn = ({ setLoggedIn }) => {
       console.error('Error during sign-in:', error);
     }
   };
+
+  function handleCallbackResponse(response) {
+    console.log("Encoded JWT ID token: " + response.credential);
+    var userObject = jwt_decode(response.credential);
+    console.log(userObject)
+    setUser(userObject)
+    document.getElementById('signInDiv').hidden = true;
+
+    // Store the token in local storage
+    const token = response.credential;
+    console.log(token);
+    localStorage.setItem('token', token)
+
+    // Set the user as logged in
+    setLoggedIn(true);
+    
+    // Redirect to homepage
+    navigate('/');
+
+  }
+
+  function handleSignOut(e) {
+    setUser({});
+    document.getElementById('signInDiv').hidden = false;
+  }
+  
+  useEffect(() => {
+    window.google.accounts.id.initialize({
+      client_id: "531044711977-9c3alvruearu5j92lu8i8lt0i53dpsvj.apps.googleusercontent.com",
+      callback: handleCallbackResponse
+    });
+  
+    window.google.accounts.id.renderButton(
+      document.getElementById("signInDiv"),
+      { theme: "outline", size: "large" }
+    );
+  }, []);
+  
 
   return (
     <Container className="d-flex justify-content-center align-items-center vh-100">
@@ -100,20 +126,31 @@ const SignIn = ({ setLoggedIn }) => {
           Don't have an account? <Link to="/signup">Sign Up</Link>
         </p>
 
-        <GoogleLogin
+        {/* <GoogleLogin
           clientId="531044711977-9c3alvruearu5j92lu8i8lt0i53dpsvj.apps.googleusercontent.com"
-          buttonText="Sign In with Google"
-          onSuccess={responseGoogle}
-          onFailure={responseGoogle}
+          //buttonText="Sign In with Google"
+          //callbackUrl="http://localhost:4000/api/users/google-signin/callback"
+          callbackUrl="http://localhost:3000/login"
+          onLogout={ () => alert ('You have been logged out')}
           cookiePolicy="single_host_origin"
-
-          responseType="code"
-        redirectUri="http://localhost:3000" // Update with your actual redirect URI
-        scope="email profile"
-        />
+          crossOrigin="true"
+        /> */}
+        
+        <div id='signInDiv'></div>
+        { Object.keys(user).length !== 0 & 
+          <button onClick={ (e) => handleSignOut(e)}>Sign Out</button>
+        }  
+        
+        { user && 
+          <div>
+            <h3>{user.name}</h3>
+          </div>
+        }
       </div>
     </Container>
   );
 };
+
+
 
 export default SignIn;
