@@ -10,6 +10,9 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const cors = require('cors');
 const googleAuth = require('google-auth-library');
 
+const app = express()
+app.use(cors()); // Enable CORS for all routes
+
 router.use(cors({ origin: 'http://localhost:3000', credentials: true }));
 
 // Create a logger instance
@@ -27,7 +30,7 @@ const logger = winston.createLogger({
 router.get('/google-signin/callback', async (req, res) => {
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
-  
+
   const googleUser = googleAuth.getAuthInstance().signIn();
 
   googleUser.then(user => {
@@ -111,6 +114,47 @@ router.get('/protected', authMiddleware, (req, res) => {
   res.json({ message: 'You accessed a protected route', user });
 });
 
+
+router.post('/google-signin/callback', async (req, res) => {
+  const token = req.body.token; // Get the token from the request body sent by the frontend
+
+  try {
+    const decodedToken = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] }); // Verify the token
+
+    // Access the user information from the decoded token
+    const { email, name } = decodedToken;
+
+    // Check if the user exists in the database based on the email
+    const user = await User.findOne({ email });
+
+    if (user) {
+      // User already exists
+      // Generate a new token for the user
+      const newToken = user.generateAuthToken();
+      
+      // Return the new token in the response
+      res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000'); // Set the allowed origin
+      res.setHeader('Access-Control-Allow-Credentials', 'true'); // Enable credentials
+      res.status(200).json({ token: newToken });
+    } else {
+      // User doesn't exist
+      // Create a new user with the received email and name
+      const newUser = new User({ email, name });
+      await newUser.save();
+
+      // Generate a token for the new user
+      const newToken = newUser.generateAuthToken();
+
+      // Return the new token in the response
+      res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000'); // Set the allowed origin
+      res.setHeader('Access-Control-Allow-Credentials', 'true'); // Enable credentials
+      res.status(200).json({ token: newToken });
+    }
+  } catch (error) {
+    console.error('Error during Google Sign-In callback:', error);
+    res.status(500).json({ message: 'An error occurred during Google Sign-In' });
+  }
+});
 
 
 module.exports = router;

@@ -48,25 +48,51 @@ const SignIn = ({ setLoggedIn }) => {
     }
   };
 
-  function handleCallbackResponse(response) {
-    console.log("Encoded JWT ID token: " + response.credential);
-    var userObject = jwt_decode(response.credential);
-    console.log(userObject)
-    setUser(userObject)
-    document.getElementById('signInDiv').hidden = true;
+  // function handleCallbackResponse(response) {
+  //   console.log("Encoded JWT ID token: " + response.credential);
+  //   var userObject = jwt_decode(response.credential);
+  //   console.log(userObject)
+  //   setUser(userObject)
+  //   document.getElementById('signInDiv').hidden = true;
 
-    // Store the token in local storage
-    const token = response.credential;
-    console.log(token);
-    localStorage.setItem('token', token)
+  //   // Store the token in local storage
+  //   const token = response.credential;
+  //   console.log(token);
+  //   localStorage.setItem('token', token)
 
-    // Set the user as logged in
-    setLoggedIn(true);
+  //   // Set the user as logged in
+  //   setLoggedIn(true);
     
-    // Redirect to homepage
-    navigate('/');
+  //   // Redirect to homepage
+  //   navigate('/');
 
+  // }
+
+  function handleCallbackResponse(response) {
+    const token = response.credential; // Get the Google token from the response
+    console.log('Encoded JWT ID token:', token);
+    setUser(response.profileObj);
+    document.getElementById('signInDiv').hidden = true;
+  
+    // Send the token to the backend
+    axios.post('http://localhost:4000/api/users/google-signin/callback', { token }, { withCredentials: true })
+      .then((response) => {
+        const newToken = response.data.token;
+  
+        // Store the new token in local storage
+        localStorage.setItem('token', newToken);
+  
+        // Set the user as logged in
+        setLoggedIn(true);
+  
+        // Redirect to homepage
+        navigate('/');
+      })
+      .catch((error) => {
+        console.error('Error during Google Sign-In callback:', error);
+      });
   }
+  
 
   function handleSignOut(e) {
     setUser({});
@@ -137,15 +163,15 @@ const SignIn = ({ setLoggedIn }) => {
         /> */}
         
         <div id='signInDiv'></div>
-        { Object.keys(user).length !== 0 & 
+        { user && Object.keys(user).length !== 0 & 
           <button onClick={ (e) => handleSignOut(e)}>Sign Out</button>
         }  
         
-        { user && 
+        { user && Object.keys(user).length !== 0 && (
           <div>
             <h3>{user.name}</h3>
           </div>
-        }
+        )}
       </div>
     </Container>
   );
