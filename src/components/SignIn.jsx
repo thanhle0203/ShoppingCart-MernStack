@@ -169,7 +169,7 @@ const SignIn = ({ setLoggedIn }) => {
         
         { user && Object.keys(user).length !== 0 && (
           <div>
-            <h3>{user.name}</h3>
+            {/* <h3>{user.name}</h3> */}
           </div>
         )}
       </div>
