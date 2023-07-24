@@ -29,13 +29,11 @@ const productSchema = new mongoose.Schema({
       ref: 'Review',
     },
   ],
-  // rating: {
-  //   type: Number,
-  //   default: 0,
-  // },
 
-  // Add more fields as per your product schema
- 
+ discount: {
+  type: Number,
+  default: 0
+ },
 
 });
 
