@@ -193,5 +193,27 @@ router.get('/comments/:productId', async (req, res) => {
   }
 });
 
+router.put('/:id/update-discount', async (req, res) => {
+  const productId = req.params.id;
+  const { discount } = req.body;
+
+  try {
+    // find the product by ID and update its discount
+    const updatedProduct = await Product.findByIdAndUpdate(productId, { discount }, { new: true });
+
+    // Check if the product was found and updated
+    if (updatedProduct) {
+      // Product discount updated successfully
+      res.status(200).json(updatedProduct);
+    } else {
+      // Product not found
+      res.status(404).json({ message: 'Product not found'});
+    }
+  } catch (error) {
+    // Handle any errors that occur dufing the update operation
+      res.status(500).json({ message: 'An error occurred while updating the product discount'})
+  }
+})
+
 
 module.exports = router;

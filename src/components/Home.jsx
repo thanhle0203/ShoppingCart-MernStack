@@ -99,6 +99,32 @@ const Home = () => {
     setShowModal(false);
   };
 
+  // Function to update the discount of a product
+  const updateProductDiscount = async (productId, discount) => {
+    try {
+      // Make a PUT request to the API endpoint to update the product discount
+      const response = await axios.put(`/api/products/${productId}/update-discount`, { discount });
+      return response.data; // updated product data
+    } catch (error) {
+      console.error('Error updating product discount:', error);
+      return null;
+    }
+  }
+
+  // Function to handle update the discount of a product
+  const handleUpdateDiscount = async () => {
+    const productId = '1';
+    const newDiscount = 15; // New discount percentage
+
+    const updatedProduct = await updateProductDiscount(productId, newDiscount);
+    if (updatedProduct) {
+      // Product discount updated successfully
+      console.log('Product discount updated:', updatedProduct);
+    } else {
+      console.log('Failed to update product discount')
+    }
+  }
+
   return (
     <Container>
       <h2>Welcome to the Shopping Cart App!</h2>
