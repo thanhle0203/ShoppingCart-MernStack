@@ -100,30 +100,31 @@ const Home = () => {
   };
 
   // Function to update the discount of a product
-  const updateProductDiscount = async (productId, discount) => {
-    try {
-      // Make a PUT request to the API endpoint to update the product discount
-      const response = await axios.put(`/api/products/${productId}/update-discount`, { discount });
-      return response.data; // updated product data
-    } catch (error) {
-      console.error('Error updating product discount:', error);
-      return null;
-    }
+const updateProductDiscount = async (productId, discount) => {
+  try {
+    // Make a PUT request to the API endpoint to update the product discount
+    const response = await axios.put(`/api/products/${productId}/update-discount`, { discount });
+    return response.data; // The updated product data
+  } catch (error) {
+    console.error('Error updating product discount:', error);
+    return null;
   }
+};
 
-  // Function to handle update the discount of a product
-  const handleUpdateDiscount = async () => {
-    const productId = '1';
-    const newDiscount = 15; // New discount percentage
+// Usage example
+const handleUpdateDiscount = async () => {
+  const productId = '64863c078fc3264f68a2b789';
+  const newDiscount = 15; // New discount percentage
 
-    const updatedProduct = await updateProductDiscount(productId, newDiscount);
-    if (updatedProduct) {
-      // Product discount updated successfully
-      console.log('Product discount updated:', updatedProduct);
-    } else {
-      console.log('Failed to update product discount')
-    }
+  const updatedProduct = await updateProductDiscount(productId, newDiscount);
+  if (updatedProduct) {
+    // Product discount updated successfully
+    console.log('Product discount updated:', updatedProduct);
+  } else {
+    // Error updating product discount
+    console.log('Failed to update product discount');
   }
+};
 
   return (
     <Container>
@@ -188,7 +189,28 @@ const Home = () => {
                   </div>
                 )}
 
-                <Card.Text>Price: ${product.price}</Card.Text>
+                {/* <Card.Text>Price: ${product.price}</Card.Text> */}
+                {product.discount > 0 ? (
+                  <div>
+                    <Card.Text>
+                      <span style={{ textDecoration: 'line-through', marginRight: '0.5rem' }}>
+                        ${product.price}
+                      </span>
+                      <span style={{ color: 'red' }}>
+                        -{product.discount} %
+                      </span>
+                    </Card.Text>
+                    <Card.Text>
+                      Price with Discount: ${((product.price * (100 - product.discount)) / 100).toFixed(2)}
+                    </Card.Text>
+                  </div>
+                ) : (
+                  <Card.Text>
+                    Price: ${product.price}
+                  </Card.Text>
+                )}
+
+
                 <Button
                   variant="primary"
                   onClick={() => handleAddToCart(product._id)}
